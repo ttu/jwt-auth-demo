@@ -7,6 +7,7 @@ interface DeviceInfo {
 }
 
 export interface Session {
+  id: string;
   deviceInfo: DeviceInfo;
   lastUsedAt: string;
   expiresAt: string;
@@ -27,9 +28,11 @@ export const getActiveSessions = async (): Promise<SessionsResponse> => {
   }
 };
 
-export const revokeSession = async (userAgent: string): Promise<void> => {
+export const revokeSession = async (sessionId: string): Promise<void> => {
   try {
-    await api.post('/auth/sessions/revoke', { userAgent });
+    console.log('Revoking session with ID:', sessionId);
+    const response = await api.post('/auth/sessions/revoke', { sessionId });
+    console.log('Revoke response:', response.data);
   } catch (error) {
     console.error('Error revoking session:', error);
     throw error;

@@ -1,7 +1,7 @@
 import request from 'supertest';
 import jwt from 'jsonwebtoken';
 import app from '../index';
-import { DeviceInfo, User } from '../types';
+import { DeviceInfo, User } from '../types/index';
 import { describe, it, expect } from '@jest/globals';
 
 // Set up test environment variables

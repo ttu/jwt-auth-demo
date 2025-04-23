@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { findToken, updateLastUsed } from '../stores/refreshToken.store';
 import { isTokenBlacklisted } from '../stores/tokenBlacklist.store';
-import { JwtPayload, RequestWithUser } from '../types';
+import { JwtPayload, RequestWithUser } from '../types/index';
 import { settings } from '../config/settings';
 
 export const verifyAccessToken = (req: RequestWithUser, res: Response, next: NextFunction) => {

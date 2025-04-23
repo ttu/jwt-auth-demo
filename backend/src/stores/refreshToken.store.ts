@@ -1,7 +1,8 @@
-import { DeviceInfo, StoredToken } from '../types';
+import { DeviceInfo, StoredToken } from '../types/index';
+import { v4 as uuidv4 } from 'uuid';
 
 // In-memory store for refresh tokens
-const refreshTokens = new Map<string, StoredToken>();
+export const refreshTokens = new Map<string, StoredToken>();
 
 // Store a refresh token
 export const storeToken = (
@@ -20,6 +21,7 @@ export const storeToken = (
     lastUsedAt: new Date(),
     expiresAt,
     isRevoked: false,
+    id: uuidv4(), // Generate unique ID for the refresh token
   });
 };
 
@@ -78,6 +80,7 @@ export const revokeDeviceTokens = (deviceId: string): void => {
 export const getUserSessions = (
   userId: number
 ): Array<{
+  id: string;
   deviceInfo: DeviceInfo;
   lastUsedAt: Date;
   expiresAt: Date;
@@ -87,6 +90,7 @@ export const getUserSessions = (
   for (const [token, data] of refreshTokens.entries()) {
     if (data.userId === userId && new Date() < data.expiresAt) {
       sessions.push({
+        id: data.id,
         deviceInfo: data.deviceInfo,
         lastUsedAt: data.lastUsedAt,
         expiresAt: data.expiresAt,

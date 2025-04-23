@@ -7,9 +7,10 @@ import {
   getUserSessions,
   cleanupExpiredTokens,
   revokeDeviceTokens,
+  refreshTokens,
 } from '../stores/refreshToken.store';
 import { blacklistToken, cleanupBlacklist } from '../stores/tokenBlacklist.store';
-import { DeviceInfo, User, RequestWithUser } from '../types';
+import { DeviceInfo, User, RequestWithUser } from '../types/index';
 import { settings } from '../config/settings';
 
 const router = Router();
@@ -151,19 +152,27 @@ router.get('/sessions', verifyAccessToken, async (req: RequestWithUser, res: Res
 // Revoke specific session route
 router.post('/sessions/revoke', verifyAccessToken, async (req: RequestWithUser, res: Response) => {
   const { userId, username } = req.user ?? {};
-  const { userAgent } = req.body;
+  const { sessionId } = req.body;
 
-  console.log('Revoke session request:', { userId, username, userAgent });
+  console.log('Revoke session request:', { userId, username, sessionId });
 
-  if (!userAgent) {
-    console.error('Revoke session failed: User agent is required');
-    return res.status(400).json({ message: 'User agent is required' });
+  if (!sessionId) {
+    console.error('Revoke session failed: Session ID is required');
+    return res.status(400).json({ message: 'Session ID is required' });
   }
 
   try {
-    revokeUserDeviceTokens(req.user!.userId, userAgent);
-    console.log('Session revoked successfully:', { userId, userAgent });
-    res.json({ message: 'Session revoked successfully' });
+    // Find the token with the matching ID
+    for (const [token, data] of refreshTokens.entries()) {
+      if (data.id === sessionId && data.userId === userId) {
+        data.isRevoked = true;
+        console.log('Session revoked successfully:', { userId, sessionId });
+        return res.json({ message: 'Session revoked successfully' });
+      }
+    }
+
+    console.error('Revoke session failed: Session not found');
+    return res.status(404).json({ message: 'Session not found' });
   } catch (error) {
     console.error('Error revoking session:', error);
     res.status(500).json({ message: 'Error revoking session' });
@@ -192,12 +201,9 @@ router.post('/invalidate-token', verifyRefreshToken, async (req: Request, res: R
 });
 
 // Clean up expired tokens and blacklist periodically
-setInterval(
-  () => {
-    cleanupExpiredTokens();
-    cleanupBlacklist();
-  },
-  60 * 60 * 1000
-); // Every hour
+setInterval(() => {
+  cleanupExpiredTokens();
+  cleanupBlacklist();
+}, 60 * 60 * 1000); // Every hour
 
 export default router;

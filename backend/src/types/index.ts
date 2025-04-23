@@ -20,6 +20,7 @@ export interface StoredToken {
   lastUsedAt: Date;
   expiresAt: Date;
   isRevoked: boolean;
+  id: string;
 }
 
 export interface JwtPayload {

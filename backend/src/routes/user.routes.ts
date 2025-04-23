@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { verifyAccessToken } from '../middleware/auth.middleware';
-import { RequestWithUser } from '../types';
+import { RequestWithUser } from '../types/index';
 
 const router = Router();
 
