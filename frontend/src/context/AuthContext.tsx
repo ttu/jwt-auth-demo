@@ -1,12 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { login, logout, getAccessToken, setAccessToken, tryRefreshToken } from '../api/auth';
+import { getAccessToken, tryRefreshToken } from '../services/auth';
+import { login, logout } from '../api/auth';
 
 interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  getAccessToken: () => string | null;
+  getAccessToken: () => string | undefined;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
