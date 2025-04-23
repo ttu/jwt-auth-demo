@@ -1,25 +1,10 @@
 import api from './config';
 import jwt_decode from 'jwt-decode';
-import { v4 as uuidv4 } from 'uuid';
 
 const AUTH_INTERVAL_MS = 60000; // Check every minute
 const TOKEN_REFRESH_THRESHOLD = 5; // Refresh 5 minutes before expiration
 const INITIAL_REFRESH_DELAY = 5000; // Wait 5 seconds before first refresh check
 const ACCESS_TOKEN_KEY = 'access_token';
-const DEVICE_ID_KEY = 'device_id';
-
-// Generate or retrieve device ID
-const getDeviceId = () => {
-  let deviceId = localStorage.getItem(DEVICE_ID_KEY);
-  if (!deviceId) {
-    deviceId = uuidv4();
-    localStorage.setItem(DEVICE_ID_KEY, deviceId);
-  }
-  return deviceId;
-};
-
-// Set device ID in headers for all requests
-api.defaults.headers.common['x-device-id'] = getDeviceId();
 
 let refreshTimeout: NodeJS.Timeout | null = null;
 let isRefreshing = false;
