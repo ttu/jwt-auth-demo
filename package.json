@@ -1,0 +1,16 @@
+{
+  "name": "react-node-jwt-example",
+  "version": "1.0.0",
+  "description": "React Node JWT Authentication Example",
+  "scripts": {
+    "start": "concurrently \"npm run start:frontend\" \"npm run start:backend\" \"npm run start:oauth\"",
+    "dev": "npm run start",
+    "start:frontend": "cd frontend && npm run dev",
+    "start:backend": "cd backend && npm run dev",
+    "start:oauth": "cd oauth-server && npm run dev",
+    "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install && cd ../oauth-server && npm install"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

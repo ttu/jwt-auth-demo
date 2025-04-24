@@ -3,14 +3,13 @@ import jwt from 'jsonwebtoken';
 import { verifyAccessToken, verifyRefreshToken } from '../middleware/auth.middleware';
 import {
   storeToken,
-  revokeUserDeviceTokens,
   getUserSessions,
   cleanupExpiredTokens,
   revokeDeviceTokens,
   refreshTokens,
 } from '../stores/refreshToken.store';
 import { blacklistToken, cleanupBlacklist } from '../stores/tokenBlacklist.store';
-import { DeviceInfo, User, RequestWithUser } from '../types/index';
+import { DeviceInfo, User, RequestWithUser, OAuthUserInfo, RequestHandlerWithUser } from '../types/index';
 import { settings } from '../config/settings';
 
 const router = Router();
@@ -92,7 +91,7 @@ router.post('/login', async (req: Request, res: Response) => {
 });
 
 // Refresh token route
-router.post('/refresh', verifyRefreshToken, async (req: RequestWithUser, res: Response) => {
+router.post('/refresh', verifyRefreshToken, (async (req: RequestWithUser, res: Response) => {
   try {
     const accessToken = jwt.sign(
       { userId: req.user!.userId, username: req.user!.username },
@@ -105,10 +104,10 @@ router.post('/refresh', verifyRefreshToken, async (req: RequestWithUser, res: Re
     console.error('Token refresh error:', error);
     res.status(500).json({ message: 'Error refreshing token' });
   }
-});
+}) as RequestHandlerWithUser);
 
 // Logout route
-router.post('/logout', verifyAccessToken, async (req: RequestWithUser, res: Response) => {
+router.post('/logout', verifyAccessToken, (async (req: RequestWithUser, res: Response) => {
   const deviceId = req.headers['x-device-id'] as string;
   const accessToken = req.headers.authorization?.split(' ')[1];
 
@@ -133,10 +132,10 @@ router.post('/logout', verifyAccessToken, async (req: RequestWithUser, res: Resp
   res.clearCookie('refreshToken');
   console.log('Logout successful');
   res.json({ message: 'Logged out successfully' });
-});
+}) as RequestHandlerWithUser);
 
 // Get active sessions route
-router.get('/sessions', verifyAccessToken, async (req: RequestWithUser, res: Response) => {
+router.get('/sessions', verifyAccessToken, (async (req: RequestWithUser, res: Response) => {
   console.log('Get sessions request:', { userId: req.user?.userId, username: req.user?.username });
 
   try {
@@ -147,10 +146,10 @@ router.get('/sessions', verifyAccessToken, async (req: RequestWithUser, res: Res
     console.error('Error fetching sessions:', error);
     res.status(500).json({ message: 'Error fetching sessions' });
   }
-});
+}) as RequestHandlerWithUser);
 
 // Revoke specific session route
-router.post('/sessions/revoke', verifyAccessToken, async (req: RequestWithUser, res: Response) => {
+router.post('/sessions/revoke', verifyAccessToken, (async (req: RequestWithUser, res: Response) => {
   const { userId, username } = req.user ?? {};
   const { sessionId } = req.body;
 
@@ -177,7 +176,7 @@ router.post('/sessions/revoke', verifyAccessToken, async (req: RequestWithUser, 
     console.error('Error revoking session:', error);
     res.status(500).json({ message: 'Error revoking session' });
   }
-});
+}) as RequestHandlerWithUser);
 
 // Invalidate current access token route
 router.post('/invalidate-token', verifyRefreshToken, async (req: Request, res: Response) => {

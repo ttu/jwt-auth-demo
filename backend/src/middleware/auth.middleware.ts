@@ -46,8 +46,11 @@ export const verifyRefreshToken = async (req: RequestWithUser, res: Response, ne
     // Verify the JWT signature first
     const decoded = jwt.verify(refreshToken, settings.jwt.refreshSecret) as JwtPayload;
 
+    // Ensure userId is a number
+    const userId = typeof decoded.userId === 'string' ? parseInt(decoded.userId, 10) : decoded.userId;
+
     // Check if the token exists in our store and is not revoked
-    const storedToken = findToken(refreshToken, decoded.userId, deviceId);
+    const storedToken = findToken(refreshToken, userId, deviceId);
 
     if (!storedToken) {
       return res.status(401).json({ message: 'Invalid or revoked refresh token' });
@@ -59,6 +62,7 @@ export const verifyRefreshToken = async (req: RequestWithUser, res: Response, ne
     req.user = decoded;
     next();
   } catch (error) {
+    console.error('Refresh token verification error:', error);
     return res.status(401).json({ message: 'Invalid refresh token' });
   }
 };

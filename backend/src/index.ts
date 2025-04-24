@@ -4,6 +4,7 @@ import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth.routes';
+import oauthRoutes from './routes/oauth.routes';
 import userRoutes from './routes/user.routes';
 import { settings } from './config/settings';
 
@@ -35,6 +36,7 @@ app.use(morgan('dev'));
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/auth', oauthRoutes);
 app.use('/api/users', userRoutes);
 
 // Error handling middleware

@@ -4,7 +4,16 @@ A demonstration of JWT-based authentication with React frontend and Node.js back
 
 ## Features
 
-- **Secure Authentication**
+- **Multiple Authentication Methods**
+
+  - Local password authentication
+  - Fake OAuth server for demoing OAuth flows:
+    - Google
+    - Microsoft
+    - Strava
+    - Company
+
+- **Secure Token-Based Authentication**
 
   - JWT-based authentication with access and refresh tokens
   - HTTP-only cookies for refresh tokens
@@ -34,30 +43,9 @@ A demonstration of JWT-based authentication with React frontend and Node.js back
   - Token blacklisting for immediate invalidation
   - Device tracking and management
 
-## Project Structure
-
-```
-.
-├── backend/                 # Node.js backend
-│   ├── src/
-│   │   ├── routes/         # API routes
-│   │   ├── middleware/     # Authentication middleware
-│   │   ├── stores/         # In-memory token stores
-│   │   └── server.js       # Express server setup
-│   └── package.json
-│
-└── frontend/               # React frontend
-    ├── src/
-    │   ├── api/           # API client and services
-    │   ├── components/    # React components
-    │   ├── context/       # React context providers
-    │   └── App.tsx        # Main application component
-    └── package.json
-```
-
 ## Authentication Flow
 
-1. **Login**
+1. **Local Password Authentication**
 
    - User provides credentials
    - Client generates unique device ID and includes it in request header:
@@ -70,7 +58,19 @@ A demonstration of JWT-based authentication with React frontend and Node.js back
    - Refresh token stored in HTTP-only cookie
    - Access token returned to client
 
-2. **Access Token Usage**
+2. **OAuth Authentication**
+
+   - User clicks provider-specific login button
+   - Application generates unique state parameter
+   - User redirected to fake OAuth server's authorization page
+   - OAuth server authenticates user and requests consent
+   - Server generates:
+     - Short-lived access token (1 hour)
+     - Long-lived refresh token (7 days)
+   - Refresh token stored in HTTP-only cookie
+   - Access token returned to client
+
+3. **Access Token Usage**
 
    - Client stores access token in memory (not localStorage)
    - Access token included in Authorization header for all protected API requests:
@@ -81,7 +81,7 @@ A demonstration of JWT-based authentication with React frontend and Node.js back
    - If token is invalid or expired, client receives 401 response
    - Client-side interceptor handles token refresh on 401 responses
 
-3. **Token Refresh**
+4. **Token Refresh**
 
    - Proactive refresh system:
      - Monitors token expiration continuously
@@ -91,11 +91,55 @@ A demonstration of JWT-based authentication with React frontend and Node.js back
    - Server validates refresh token
    - New access token issued if refresh token valid
 
-4. **Session Management**
+5. **Session Management**
    - Each device gets unique refresh token
    - Sessions tracked by device ID
    - Users can view and revoke sessions
    - Expired sessions automatically cleaned up
+
+## OAuth Implementation
+
+The application supports OAuth 2.0 authentication with multiple providers:
+
+- **Supported Providers**
+
+  - Google
+  - Microsoft
+  - Strava
+  - Custom Company Provider
+
+- **OAuth Flow**
+
+  1. **Authorization Request**
+
+     - User clicks provider-specific login button
+     - Application generates unique state parameter
+     - User redirected to provider's authorization page
+     - Provider authenticates user and requests consent
+
+  2. **Authorization Code Exchange**
+
+     - Provider redirects back with authorization code
+     - Application exchanges code for access and refresh tokens
+     - Tokens are validated and stored securely
+
+  3. **Token Management**
+
+     - Access tokens are short-lived (1 hour)
+     - Refresh tokens are long-lived (7 days)
+     - Tokens are stored securely in HTTP-only cookies
+     - Automatic token refresh before expiration
+
+  4. **Provider-Specific Scopes**
+     - Google/Microsoft/Company: `openid`, `profile`, `email`
+     - Strava: `read`, `activity:read`
+
+- **Security Features**
+  - State parameter to prevent CSRF attacks
+  - PKCE (Proof Key for Code Exchange) support
+  - Secure token storage and transmission
+  - Provider-specific client validation
+  - Automatic cleanup of expired authorization codes
 
 ## Security Measures
 
@@ -118,6 +162,85 @@ A demonstration of JWT-based authentication with React frontend and Node.js back
   - SameSite=strict (prevents CSRF)
   - Secure in production
 
+## Authentication Flow Diagrams
+
+### Password-Based Authentication Flow
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Server
+    participant TokenStore
+
+    Client->>Server: POST /login (email, password)
+    Note over Server: Validate credentials
+    Server->>Server: Generate JWT tokens
+    Server->>TokenStore: Store refresh token
+    Server->>Client: Set refresh token cookie
+    Server->>Client: Return access token
+
+    Note over Client: Use access token for API calls
+    Client->>Server: API request with access token
+    Note over Server: Validate access token
+    Server->>Client: Return API response
+
+    Note over Client: Access token expired
+    Client->>Server: POST /refresh (refresh token)
+    Note over Server: Validate refresh token
+    Server->>TokenStore: Check refresh token validity
+    Server->>Client: Return new access token
+
+    Client->>Server: POST /logout
+    Server->>TokenStore: Delete refresh token
+    Server->>Client: Clear refresh token cookie
+```
+
+### OAuth-Based Authentication Flow
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Server
+    participant OAuthProvider
+    participant TokenStore
+
+    Client->>Server: GET /oauth/:provider
+    Note over Server: Generate state parameter
+    Server->>TokenStore: Store state with device info
+    Server->>Client: Return OAuth redirect URL
+
+    Client->>OAuthProvider: Redirect to authorization URL
+    Note over OAuthProvider: User authenticates
+    OAuthProvider->>Client: Redirect with auth code
+    Client->>Server: GET /callback/:provider (code, state)
+
+    Note over Server: Validate state
+    Server->>TokenStore: Verify stored state
+    Server->>OAuthProvider: Exchange code for tokens
+    OAuthProvider->>Server: Return OAuth tokens
+
+    Note over Server: Get user info
+    Server->>OAuthProvider: Request user info
+    OAuthProvider->>Server: Return user info
+
+    Note over Server: Generate app tokens
+    Server->>Server: Generate JWT tokens
+    Server->>TokenStore: Store refresh token
+    Server->>Client: Set refresh token cookie
+    Server->>Client: Return access token
+
+    Note over Client: Use access token for API calls
+    Client->>Server: API request with access token
+    Note over Server: Validate access token
+    Server->>Client: Return API response
+
+    Note over Client: Access token expired
+    Client->>Server: POST /refresh (refresh token)
+    Note over Server: Validate refresh token
+    Server->>TokenStore: Check refresh token validity
+    Server->>Client: Return new access token
+```
+
 ## Environment Variables
 
 ### Backend
@@ -129,12 +252,6 @@ JWT_REFRESH_SECRET=your_refresh_secret
 ACCESS_TOKEN_EXPIRY=900        # 15 minutes in seconds
 REFRESH_TOKEN_EXPIRY=604800    # 7 days in seconds
 NODE_ENV=development
-```
-
-### Frontend
-
-```env
-VITE_API_URL=http://localhost:3001/api
 ```
 
 ## Getting Started
@@ -149,35 +266,78 @@ VITE_API_URL=http://localhost:3001/api
 2. **Install dependencies**
 
    ```bash
-   # Install backend dependencies
-   cd backend
-   npm install
-
-   # Install frontend dependencies
-   cd ../frontend
-   npm install
+   # Install all dependencies (backend, frontend, oauth-server)
+   npm run install:all
    ```
 
 3. **Set up environment variables**
 
-   - Copy `.env.example` to `.env` in both backend and frontend directories
-   - Update the values as needed
+   The `.env` file is already included in the backend directory with the following configuration:
+
+   ```env
+   PORT=3001
+   JWT_ACCESS_SECRET=your_access_secret
+   JWT_REFRESH_SECRET=your_refresh_secret
+   ACCESS_TOKEN_EXPIRY=900        # 15 minutes in seconds
+   REFRESH_TOKEN_EXPIRY=604800    # 7 days in seconds
+   NODE_ENV=development
+   ```
 
 4. **Start the development servers**
 
-   ```bash
-   # Start backend server
-   cd backend
-   npm run dev
+   From the root directory, run:
 
-   # Start frontend server
-   cd ../frontend
+   ```bash
+   # Start both backend and frontend servers
    npm run dev
    ```
 
 5. **Access the application**
+
    - Frontend: http://localhost:5173
    - Backend API: http://localhost:3001/api
+   - OAuth Server: http://localhost:3002
+
+6. **Test the authentication**
+
+   - Try logging in with email/password
+   - Verify token refresh functionality
+   - Check session management features
+
+7. **Test OAuth authentication**
+   - Start the fake OAuth server:
+     ```bash
+     cd oauth-server
+     npm run dev
+     ```
+   - Try logging in with each OAuth provider:
+     - Google
+     - Microsoft
+     - Strava
+     - Company
+   - Verify OAuth token refresh functionality
+   - Check OAuth session management
+
+## Troubleshooting
+
+If you encounter issues:
+
+1. **Authentication Issues**
+
+   - Verify environment variables are set correctly
+   - Check token expiration times
+   - Ensure proper CORS configuration
+
+2. **Token Refresh Issues**
+
+   - Verify token expiration times
+   - Check HTTP-only cookie settings
+   - Ensure proper CORS configuration
+
+3. **Session Management Problems**
+   - Verify device ID generation
+   - Check session storage implementation
+   - Ensure proper cleanup of expired sessions
 
 ## API Endpoints
 
@@ -222,6 +382,36 @@ VITE_API_URL=http://localhost:3001/api
    - Proper error messages for security events
    - Graceful handling of token expiration
    - Secure error responses
+
+## Project Structure
+
+```
+.
+├── backend/               # Node.js backend
+│   ├── src/
+│   │   ├── routes/        # API routes
+│   │   ├── middleware/    # Authentication middleware
+│   │   ├── stores/        # In-memory token stores
+│   │   └── server.js      # Express server setup
+│   └── package.json
+│
+├── frontend/              # React frontend
+│   ├── src/
+│   │   ├── api/           # API client and services
+│   │   ├── components/    # React components
+│   │   ├── context/       # React context providers
+│   │   └── App.tsx        # Main application component
+│   └── package.json
+│
+├── oauth-server/          # Fake OAuth server for demoing
+│   ├── src/
+│   │   ├── routes/        # OAuth routes
+│   │   ├── config/        # OAuth configuration
+│   │   └── server.js      # OAuth server setup
+│   └── package.json
+│
+└── package.json           # Root package.json with shared scripts
+```
 
 ## Contributing
 

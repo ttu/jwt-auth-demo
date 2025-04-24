@@ -5,6 +5,7 @@ import Login from './components/Login';
 import Users from './components/Users';
 import Sessions from './components/Sessions';
 import Navigation from './components/Navigation';
+import OAuthCallback from './components/OAuthCallback';
 
 interface RouteProps {
   children: React.ReactNode;
@@ -75,6 +76,7 @@ const App: React.FC = () => {
               </AuthRoute>
             }
           />
+          <Route path="/auth/callback" element={<OAuthCallback />} />
           <Route path="/" element={<Navigate to="/login" />} />
         </Routes>
       </Router>

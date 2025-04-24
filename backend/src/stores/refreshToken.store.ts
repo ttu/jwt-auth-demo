@@ -30,6 +30,9 @@ export const findToken = (token: string, userId: number, deviceId: string): Stor
   const storedToken = refreshTokens.get(token);
   if (!storedToken) return null;
 
+  console.log('storedToken', storedToken);
+  console.log('userId', userId);
+  console.log('deviceId', deviceId);
   // Check if token is expired
   if (new Date() > storedToken.expiresAt) {
     refreshTokens.delete(token); // Clean up expired token

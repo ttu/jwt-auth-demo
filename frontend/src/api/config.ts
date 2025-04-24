@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const DEVICE_ID_KEY = 'device_id';
+const DEVICE_ID_KEY = 'deviceId';
 
 // Generate a unique device ID or get it from storage
 const getDeviceId = () => {
