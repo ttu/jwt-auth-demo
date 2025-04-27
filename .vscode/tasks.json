@@ -1,0 +1,41 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "npm",
+      "script": "build",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": [],
+      "label": "npm: build",
+      "detail": "Build the backend and OAuth server"
+    },
+    {
+      "type": "npm",
+      "script": "build:backend",
+      "group": "build",
+      "problemMatcher": [],
+      "label": "npm: build:backend",
+      "detail": "Build the backend server"
+    },
+    {
+      "type": "npm",
+      "script": "build:oauth",
+      "group": "build",
+      "problemMatcher": [],
+      "label": "npm: build:oauth",
+      "detail": "Build the OAuth server"
+    },
+    {
+      "type": "npm",
+      "script": "dev:frontend",
+      "group": "none",
+      "problemMatcher": [],
+      "label": "npm: dev:frontend",
+      "detail": "Start the frontend development server",
+      "isBackground": true
+    }
+  ]
+}

@@ -305,6 +305,10 @@ sequenceDiagram
    - Verify OAuth token refresh functionality
    - Check OAuth session management
 
+## Debugging with VS Code
+
+This project includes pre-configured VS Code debugging settings for both frontend and backend services. The configuration supports debugging the full stack or individual services.
+
 ## API Endpoints
 
 ### Authentication

@@ -3,14 +3,21 @@
   "version": "1.0.0",
   "description": "React Node JWT Authentication Example",
   "scripts": {
-    "start": "concurrently \"npm run start:frontend\" \"npm run start:backend\" \"npm run start:oauth\"",
-    "dev": "npm run start",
-    "start:frontend": "cd frontend && npm run dev",
-    "start:backend": "cd backend && npm run dev",
-    "start:oauth": "cd oauth-server && npm run dev",
+    "build": "npm run build:backend && npm run build:oauth",
+    "build:backend": "cd backend && npm run build",
+    "build:oauth": "cd oauth-server && npm run build",
+    "start": "concurrently \"npm run start:backend\" \"npm run start:oauth\" \"npm run start:frontend\"",
+    "start:backend": "cd backend && npm run start",
+    "start:oauth": "cd oauth-server && npm run start",
+    "start:frontend": "cd frontend && npm run start",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:oauth\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:oauth": "cd oauth-server && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
     "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install && cd ../oauth-server && npm install"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "ts-node": "^10.9.2"
   }
 }
