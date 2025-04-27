@@ -2,8 +2,10 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
-import oauthRoutes from './routes/oauth.routes';
 import { config } from './config';
+import authorizeRoutes from './routes/authorize.routes';
+import tokenRoutes from './routes/token.routes';
+import userinfoRoutes from './routes/userinfo.routes';
 
 dotenv.config();
 
@@ -26,7 +28,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
-app.use('/oauth', oauthRoutes);
+app.use('/oauth', authorizeRoutes);
+app.use('/oauth', tokenRoutes);
+app.use('/oauth', userinfoRoutes);
 
 // Error handling middleware
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
