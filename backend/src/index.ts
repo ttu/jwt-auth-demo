@@ -7,6 +7,7 @@ import authRoutes from './routes/auth.routes';
 import oauthRoutes from './routes/oauth.routes';
 import userRoutes from './routes/user.routes';
 import { settings } from './config/settings';
+import { startCleanup } from './services/tokenCleanup';
 
 // Load environment variables
 dotenv.config();
@@ -44,6 +45,9 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
   console.error(err.stack);
   res.status(500).json({ message: 'Something went wrong!' });
 });
+
+// Start token cleanup
+startCleanup();
 
 // Start server
 app.listen(settings.server.port, () => {

@@ -241,19 +241,6 @@ sequenceDiagram
     Server->>Client: Return new access token
 ```
 
-## Environment Variables
-
-### Backend
-
-```env
-PORT=3001
-JWT_ACCESS_SECRET=your_access_secret
-JWT_REFRESH_SECRET=your_refresh_secret
-ACCESS_TOKEN_EXPIRY=900        # 15 minutes in seconds
-REFRESH_TOKEN_EXPIRY=604800    # 7 days in seconds
-NODE_ENV=development
-```
-
 ## Getting Started
 
 1. **Clone the repository**
@@ -318,27 +305,6 @@ NODE_ENV=development
    - Verify OAuth token refresh functionality
    - Check OAuth session management
 
-## Troubleshooting
-
-If you encounter issues:
-
-1. **Authentication Issues**
-
-   - Verify environment variables are set correctly
-   - Check token expiration times
-   - Ensure proper CORS configuration
-
-2. **Token Refresh Issues**
-
-   - Verify token expiration times
-   - Check HTTP-only cookie settings
-   - Ensure proper CORS configuration
-
-3. **Session Management Problems**
-   - Verify device ID generation
-   - Check session storage implementation
-   - Ensure proper cleanup of expired sessions
-
 ## API Endpoints
 
 ### Authentication
@@ -367,7 +333,7 @@ If you encounter issues:
 
 2. **Token Expiration**
 
-   - Access tokens: 15 minutes
+   - Access tokens: 15 seconds (for demo purposes)
    - Refresh tokens: 7 days
    - Automatic cleanup of expired tokens
    - Proactive refresh 5 minutes before expiration

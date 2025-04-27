@@ -1,14 +1,8 @@
 import { Router, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { verifyAccessToken, verifyRefreshToken } from '../middleware/auth.middleware';
-import {
-  storeToken,
-  getUserSessions,
-  cleanupExpiredTokens,
-  revokeDeviceTokens,
-  refreshTokens,
-} from '../stores/refreshToken.store';
-import { blacklistToken, cleanupBlacklist } from '../stores/tokenBlacklist.store';
+import { storeToken, getUserSessions, revokeDeviceTokens, refreshTokens } from '../stores/refreshToken.store';
+import { blacklistToken } from '../stores/tokenBlacklist.store';
 import { DeviceInfo, User, RequestWithUser, OAuthUserInfo, RequestHandlerWithUser } from '../types/index';
 import { settings } from '../config/settings';
 
@@ -198,11 +192,5 @@ router.post('/invalidate-token', verifyRefreshToken, async (req: Request, res: R
     res.status(500).json({ message: 'Error invalidating token' });
   }
 });
-
-// Clean up expired tokens and blacklist periodically
-setInterval(() => {
-  cleanupExpiredTokens();
-  cleanupBlacklist();
-}, 60 * 60 * 1000); // Every hour
 
 export default router;
