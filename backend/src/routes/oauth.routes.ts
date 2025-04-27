@@ -1,9 +1,9 @@
 import { Router } from 'express';
 import jwt from 'jsonwebtoken';
 import { storeToken } from '../stores/refreshToken.store';
-import { DeviceInfo, RequestWithUser, OAuthUserInfo } from '../types/index';
+import { DeviceInfo, RequestWithUser, OAuthUserInfo, OAuthState } from '../types/index';
 import { settings } from '../config/settings';
-import { v4 as uuidv4 } from 'uuid';
+import { encodeState, decodeState } from '../utils/oauth.utils';
 
 // Define token response type
 interface TokenResponse {
@@ -18,11 +18,12 @@ const router = Router();
 // In-memory store for OAuth users
 const oauthUsers: { [key: string]: OAuthUserInfo } = {};
 
-// In-memory store for OAuth states
-const oauthStates = new Map<string, { state: string; deviceId: string; timestamp: number }>();
-
 // OAuth login endpoint
 router.get('/oauth/:provider', async (req: RequestWithUser, res) => {
+  debugger;
+  // This route is used to start the OAuth login process.
+  // It redirects the user to the OAuth provider's authorization page.
+  // - The deviceId is the unique device ID of the user's device.
   const { provider } = req.params;
   const deviceId = req.headers['x-device-id'] as string;
 
@@ -34,7 +35,13 @@ router.get('/oauth/:provider', async (req: RequestWithUser, res) => {
     return res.status(400).json({ error: 'Device ID is required' });
   }
 
-  const state = uuidv4();
+  const state: OAuthState = {
+    deviceId,
+    timestamp: Date.now(),
+  };
+
+  const encodedState = encodeState(state);
+
   const config = {
     clientId: `fake-${provider}-client-id`,
     redirectUri: `http://localhost:3001/api/auth/callback/${provider}`,
@@ -42,27 +49,12 @@ router.get('/oauth/:provider', async (req: RequestWithUser, res) => {
     scopes: provider === 'strava' ? ['read', 'activity:read'] : ['openid', 'profile', 'email'],
   };
 
-  // Store state in memory with device ID and timestamp
-  oauthStates.set(state, {
-    state,
-    deviceId,
-    timestamp: Date.now(),
-  });
-
-  // Clean up old states (older than 1 hour)
-  const oneHourAgo = Date.now() - 3600000;
-  for (const [key, value] of oauthStates.entries()) {
-    if (value.timestamp < oneHourAgo) {
-      oauthStates.delete(key);
-    }
-  }
-
   const params = new URLSearchParams({
     response_type: 'code',
     client_id: config.clientId,
     redirect_uri: config.redirectUri,
     scope: config.scopes.join(' '),
-    state,
+    state: encodedState,
     provider,
   });
 
@@ -73,31 +65,25 @@ router.get('/oauth/:provider', async (req: RequestWithUser, res) => {
 // Handle OAuth callback
 router.get('/callback/:provider', async (req: RequestWithUser, res) => {
   const { provider } = req.params;
-  const { code, state } = req.query;
+  const { code, state: encodedState } = req.query;
 
-  console.log('OAuth callback received:', {
-    provider,
-    code,
-    state,
-  });
+  console.log('OAuth callback received:', { provider, code, encodedState });
 
-  if (!code || !state) {
+  if (!code || !encodedState) {
     return res.status(400).json({ error: 'Missing required parameters' });
   }
 
-  // Validate state
-  const storedState = oauthStates.get(state as string);
-  if (!storedState) {
-    console.log('State validation failed: State not found');
-    return res.status(400).json({ error: 'Invalid state parameter' });
-  }
+  // Decode and validate state
+  const state = decodeState(encodedState as string);
 
-  // Remove used state
-  oauthStates.delete(state as string);
+  // Validate timestamp (1 hour expiration)
+  if (Date.now() - state.timestamp > 3600000) {
+    return res.status(400).json({ error: 'State parameter expired' });
+  }
 
   try {
     // Exchange code for tokens
-    console.log(`[${new Date().toISOString()}] Token exchange request:`, {
+    console.log(`[OAuth route] Token exchange request:`, {
       code,
       redirect_uri: `http://localhost:3001/api/auth/callback/${provider}`,
       client_id: `fake-${provider}-client-id`,
@@ -119,7 +105,7 @@ router.get('/callback/:provider', async (req: RequestWithUser, res) => {
       }),
     });
 
-    console.log(`[${new Date().toISOString()}] Token exchange response status:`, tokenResponse.status);
+    console.log(`[OAuth route] Token exchange response status:`, tokenResponse.status);
 
     if (!tokenResponse.ok) {
       const responseText = await tokenResponse.text();
@@ -132,21 +118,21 @@ router.get('/callback/:provider', async (req: RequestWithUser, res) => {
     }
 
     const tokens = (await tokenResponse.json()) as TokenResponse;
-    console.log(`[${new Date().toISOString()}] Token exchange successful:`, {
+    console.log(`[OAuth route] Token exchange successful:`, {
       accessToken: tokens.access_token ? 'present' : 'missing',
       refreshToken: tokens.refresh_token ? 'present' : 'missing',
       expiresIn: tokens.expires_in,
     });
 
     // Get user info
-    console.log(`[${new Date().toISOString()}] Fetching user info with access token`);
+    console.log(`[OAuth route] Fetching user info with access token`);
     const userInfoResponse = await fetch('http://localhost:3002/oauth/userinfo', {
       headers: {
         Authorization: `Bearer ${tokens.access_token}`,
       },
     });
 
-    console.log(`[${new Date().toISOString()}] User info response status:`, userInfoResponse.status);
+    console.log(`[OAuth route] User info response status:`, userInfoResponse.status);
 
     if (!userInfoResponse.ok) {
       const responseText = await userInfoResponse.text();
@@ -159,7 +145,7 @@ router.get('/callback/:provider', async (req: RequestWithUser, res) => {
     }
 
     const userInfo = (await userInfoResponse.json()) as OAuthUserInfo;
-    console.log(`[${new Date().toISOString()}] User info retrieved:`, {
+    console.log(`[OAuth route] User info retrieved:`, {
       id: userInfo.id,
       email: userInfo.email,
       provider: userInfo.provider,
@@ -185,8 +171,8 @@ router.get('/callback/:provider', async (req: RequestWithUser, res) => {
       os: (req.headers['sec-ch-ua-platform'] as string) || 'unknown',
     };
 
-    // Use the device ID from the stored state
-    storeToken(refreshToken, userId, storedState.deviceId, deviceInfo, settings.jwt.refreshTokenExpiry);
+    // Use the device ID from the state
+    storeToken(refreshToken, userId, state.deviceId, deviceInfo, settings.jwt.refreshTokenExpiry);
 
     // Set refresh token cookie
     res.cookie('refreshToken', refreshToken, {
@@ -198,10 +184,13 @@ router.get('/callback/:provider', async (req: RequestWithUser, res) => {
 
     // Redirect to frontend with tokens
     res.redirect(`http://localhost:3000/auth/callback?success=true&token=${accessToken}`);
-  } catch (error: unknown) {
-    console.error(`[${new Date().toISOString()}] OAuth callback error:`, error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    res.redirect(`http://localhost:3000/auth/callback?success=false&error=${encodeURIComponent(errorMessage)}`);
+  } catch (error) {
+    console.error('[OAuth route] OAuth callback error:', error);
+    res.redirect(
+      `http://localhost:3000/auth/callback?success=false&error=${encodeURIComponent(
+        error instanceof Error ? error.message : 'Unknown error'
+      )}`
+    );
   }
 });
 

@@ -59,3 +59,8 @@ export type RequestHandlerWithUser = RequestHandler<
   any,
   { user?: JwtPayload; session?: { oauthState?: string } }
 >;
+
+export type OAuthState = {
+  deviceId: string;
+  timestamp: number;
+};
