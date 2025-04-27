@@ -1,10 +1,10 @@
 import api from './config';
 
-export interface User {
+export type User = {
   id: number;
   name: string;
   email: string;
-}
+};
 
 export const getUsers = async (): Promise<User[]> => {
   const response = await api.get('/users/list');

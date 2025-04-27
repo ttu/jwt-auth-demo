@@ -1,12 +1,12 @@
 import { OAuthProvider } from '../types';
 
-export interface AuthorizationCode {
+export type AuthorizationCode = {
   code: string;
   clientId: string;
   redirectUri: string;
   provider: OAuthProvider;
   expiresAt: number;
-}
+};
 
 const store = new Map<string, AuthorizationCode>();
 

@@ -1,22 +1,22 @@
 import api from './config';
 
-interface DeviceInfo {
+export type DeviceInfo = {
   userAgent: string;
   platform: string;
   os: string;
-}
+};
 
-export interface Session {
+export type Session = {
   id: string;
   deviceInfo: DeviceInfo;
   lastUsedAt: string;
   expiresAt: string;
   isRevoked: boolean;
-}
+};
 
-interface SessionsResponse {
+export type SessionsResponse = {
   sessions: Session[];
-}
+};
 
 export const getActiveSessions = async (): Promise<SessionsResponse> => {
   try {

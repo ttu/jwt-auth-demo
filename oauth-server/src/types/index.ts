@@ -1,39 +1,39 @@
 export type OAuthProvider = 'google' | 'microsoft' | 'strava' | 'company';
 
-export interface OAuthUserInfo {
+export type OAuthUserInfo = {
   id: string;
   email: string;
   name: string;
   provider: OAuthProvider;
-}
+};
 
-export interface OAuthAuthorizationRequest {
+export type OAuthAuthorizationRequest = {
   response_type: 'code';
   client_id: string;
   redirect_uri: string;
   scope: string;
   state: string;
   provider: OAuthProvider;
-}
+};
 
-export interface OAuthTokenRequest {
+export type OAuthTokenRequest = {
   grant_type: 'authorization_code';
   code: string;
   redirect_uri: string;
   client_id: string;
   client_secret: string;
   provider: OAuthProvider;
-}
+};
 
-export interface OAuthTokenResponse {
+export type OAuthTokenResponse = {
   access_token: string;
   token_type: 'Bearer';
   expires_in: number;
   refresh_token?: string;
   id_token?: string;
-}
+};
 
-export interface OAuthConfig {
+export type OAuthConfig = {
   clientId: string;
   clientSecret: string;
   redirectUri: string;
@@ -41,8 +41,8 @@ export interface OAuthConfig {
   tokenEndpoint: string;
   userInfoEndpoint: string;
   scopes: string[];
-}
+};
 
-export interface OAuthProviderConfig {
+export type OAuthProviderConfig = {
   [key: string]: OAuthConfig;
-}
+};
