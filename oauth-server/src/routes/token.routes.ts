@@ -48,11 +48,26 @@ router.post('/token', (req, res) => {
     expiresIn: config.refreshTokenExpiry,
   });
 
+  // Generate ID token with nonce
+  const idToken = jwt.sign(
+    {
+      iss: 'http://localhost:3002', // Issuer
+      sub: mockUsers[provider].id, // Subject
+      aud: client_id, // Audience
+      exp: Math.floor(Date.now() / 1000) + config.accessTokenExpiry, // Expiration time
+      iat: Math.floor(Date.now() / 1000), // Issued at
+      nonce: authCode.nonce, // Nonce for replay attack prevention
+      provider,
+    },
+    config.jwtSecret
+  );
+
   const response: OAuthTokenResponse = {
     access_token: accessToken,
     token_type: 'Bearer',
     expires_in: config.accessTokenExpiry,
     refresh_token: refreshToken,
+    id_token: idToken,
   };
 
   // Clean up used authorization code

@@ -24,8 +24,15 @@ export type StoredToken = {
 };
 
 export type JwtPayload = {
+  iss: string; // Issuer
+  sub: string; // Subject (user ID)
+  aud: string[]; // Audience
+  jti: string; // JWT ID
   userId: number;
   username: string;
+  deviceId: string;
+  scope: string[];
+  version: string;
   iat?: number;
   exp?: number;
 };

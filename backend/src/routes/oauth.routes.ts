@@ -4,14 +4,15 @@ import { storeToken } from '../stores/refreshToken.store';
 import { DeviceInfo, RequestWithUser, OAuthUserInfo, OAuthState } from '../types/index';
 import { settings } from '../config/settings';
 import { encodeState, decodeState } from '../utils/oauth.utils';
+import { generateNonce, validateNonce, cleanupNonces } from '../stores/nonce.store';
 
-// Define token response type
-interface TokenResponse {
+type TokenResponse = {
   access_token: string;
   token_type: string;
   expires_in: number;
   refresh_token?: string;
-}
+  id_token?: string;
+};
 
 const router = Router();
 
@@ -35,6 +36,13 @@ router.get('/oauth/:provider', async (req: RequestWithUser, res) => {
     return res.status(400).json({ error: 'Device ID is required' });
   }
 
+  // Clean up expired nonces
+  // TODO: Move to interval
+  cleanupNonces();
+
+  // Nonce is used to prevent CSRF attacks and to verify the response from the OAuth provider
+  const nonce = generateNonce();
+
   const state: OAuthState = {
     deviceId,
     timestamp: Date.now(),
@@ -55,6 +63,7 @@ router.get('/oauth/:provider', async (req: RequestWithUser, res) => {
     redirect_uri: config.redirectUri,
     scope: config.scopes.join(' '),
     state: encodedState,
+    nonce,
     provider,
   });
 
@@ -64,10 +73,11 @@ router.get('/oauth/:provider', async (req: RequestWithUser, res) => {
 
 // Handle OAuth callback
 router.get('/callback/:provider', async (req: RequestWithUser, res) => {
+  debugger;
   const { provider } = req.params;
   const { code, state: encodedState } = req.query;
 
-  console.log('OAuth callback received:', { provider, code, encodedState });
+  console.log('[OAuth route] OAuth callback received:', { provider, code, encodedState });
 
   if (!code || !encodedState) {
     return res.status(400).json({ error: 'Missing required parameters' });
@@ -118,11 +128,19 @@ router.get('/callback/:provider', async (req: RequestWithUser, res) => {
     }
 
     const tokens = (await tokenResponse.json()) as TokenResponse;
-    console.log(`[OAuth route] Token exchange successful:`, {
-      accessToken: tokens.access_token ? 'present' : 'missing',
-      refreshToken: tokens.refresh_token ? 'present' : 'missing',
-      expiresIn: tokens.expires_in,
-    });
+
+    // Validate nonce from ID token
+    if (!tokens.id_token) {
+      console.log('[OAuth route] ID token missing');
+      return res.status(400).json({ error: 'ID token missing' });
+    }
+
+    // Decode and validate ID token
+    const idToken = jwt.decode(tokens.id_token) as { nonce?: string };
+    if (!idToken.nonce || !validateNonce(idToken.nonce)) {
+      console.log('[OAuth route] Nonce validation failed:', { received: idToken.nonce });
+      return res.status(400).json({ error: 'Invalid nonce parameter' });
+    }
 
     // Get user info
     console.log(`[OAuth route] Fetching user info with access token`);

@@ -8,7 +8,7 @@ const router = express.Router();
 
 // Authorization endpoint
 router.get('/authorize', (req, res) => {
-  const { response_type, client_id, redirect_uri, scope, state, provider } =
+  const { response_type, client_id, redirect_uri, scope, state, nonce, provider } =
     req.query as unknown as OAuthAuthorizationRequest;
 
   console.log('Authorization request:', {
@@ -17,6 +17,7 @@ router.get('/authorize', (req, res) => {
     redirect_uri,
     scope,
     state,
+    nonce,
     provider,
     query: req.query,
     headers: req.headers,
@@ -66,12 +67,13 @@ router.get('/authorize', (req, res) => {
     response_type,
     client_id,
     state,
+    nonce,
   });
 });
 
 // Authorization confirmation endpoint
 router.post('/authorize/confirm', (req, res) => {
-  const { response_type, client_id, redirect_uri, scope, state, provider } = req.body;
+  const { response_type, client_id, redirect_uri, scope, state, nonce, provider } = req.body;
 
   console.log('Authorization confirmation request:', {
     response_type,
@@ -79,7 +81,10 @@ router.post('/authorize/confirm', (req, res) => {
     redirect_uri,
     scope,
     state,
+    nonce,
     provider,
+    body: req.body,
+    headers: req.headers,
   });
 
   // Validate redirect URI
@@ -111,18 +116,21 @@ router.post('/authorize/confirm', (req, res) => {
       redirectUri: redirect_uri,
       provider,
       expiresAt,
+      nonce,
     });
 
     // Build redirect URL with parameters
     const params = new URLSearchParams();
     params.append('code', code);
     if (state) {
+      console.log('Appending state to redirect URL:', state);
       params.append('state', state);
     }
 
     // Construct the redirect URL
     const separator = redirect_uri.includes('?') ? '&' : '?';
     const redirectUrl = `${redirect_uri}${separator}${params.toString()}`;
+    console.log('Final redirect URL:', redirectUrl);
 
     res.redirect(redirectUrl);
   } catch (error) {

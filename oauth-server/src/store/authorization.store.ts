@@ -6,6 +6,7 @@ export type AuthorizationCode = {
   redirectUri: string;
   provider: OAuthProvider;
   expiresAt: number;
+  nonce: string;
 };
 
 const store = new Map<string, AuthorizationCode>();

@@ -19,11 +19,20 @@ A demonstration of JWT-based authentication with React frontend and Node.js back
   - HTTP-only cookies for refresh tokens
   - Device-specific session management
   - Token blacklisting for immediate invalidation
+  - Enhanced JWT claims for improved security:
+    - `iss` (Issuer): Identifies the application
+    - `sub` (Subject): User ID in standard JWT format
+    - `aud` (Audience): Specifies authorized services
+    - `jti` (JWT ID): Unique token identifier to prevent replay attacks
+    - `scope`: Defines token permissions (read/write for access token, refresh for refresh token)
+    - `version`: Handles token format changes
+    - `deviceId`: Tracks device-specific tokens
 
 - **Token Management**
 
   - Short-lived access tokens (15 minutes)
   - Long-lived refresh tokens with expiration (7 days)
+  - ID tokens for identity verification and nonce validation
   - Proactive token refresh system:
     - Checks token expiration every minute
     - Refreshes tokens 5 minutes before expiration
@@ -42,6 +51,10 @@ A demonstration of JWT-based authentication with React frontend and Node.js back
   - XSS protection with HTTP-only cookies
   - Token blacklisting for immediate invalidation
   - Device tracking and management
+  - Standard JWT claims for improved security
+  - Permission-based token scoping
+  - Replay attack prevention through unique token IDs
+  - Version control for token format changes
 
 ## Authentication Flow
 
@@ -53,22 +66,31 @@ A demonstration of JWT-based authentication with React frontend and Node.js back
      X-Device-Id: <unique_device_id>
      ```
    - Server generates:
-     - Short-lived access token (15 minutes)
-     - Long-lived refresh token (7 days)
+     - Short-lived access token (15 minutes) with enhanced claims:
+       - Standard JWT claims (iss, sub, aud, jti)
+       - User information (userId, username)
+       - Device tracking (deviceId)
+       - Permission scoping (scope: ['read', 'write'])
+       - Version control (version: '1.0')
+     - Long-lived refresh token (7 days) with similar claims but restricted scope
    - Refresh token stored in HTTP-only cookie
    - Access token returned to client
 
 2. **OAuth Authentication**
 
    - User clicks provider-specific login button
-   - Application generates unique state parameter
+   - Application generates unique state parameter and nonce
    - User redirected to fake OAuth server's authorization page
    - OAuth server authenticates user and requests consent
    - Server generates:
-     - Short-lived access token (1 hour)
-     - Long-lived refresh token (7 days)
+     - Short-lived access token (1 hour) for API access
+     - Long-lived refresh token (7 days) for token refresh
+     - ID token containing:
+       - Standard OpenID Connect claims (iss, sub, aud, exp, iat)
+       - Nonce for replay attack prevention
+       - Provider information
    - Refresh token stored in HTTP-only cookie
-   - Access token returned to client
+   - Access token and ID token returned to client
 
 3. **Access Token Usage**
 
@@ -99,7 +121,7 @@ A demonstration of JWT-based authentication with React frontend and Node.js back
 
 ## OAuth Implementation
 
-The application supports OAuth 2.0 authentication with multiple providers:
+The application implements OAuth 2.0 Authorization Code Flow with OpenID Connect for identity verification.
 
 - **Supported Providers**
 
@@ -108,26 +130,51 @@ The application supports OAuth 2.0 authentication with multiple providers:
   - Strava
   - Custom Company Provider
 
-- **OAuth Flow**
+- **OAuth 2.0 Authorization Code Flow with OpenID Connect**
 
   1. **Authorization Request**
 
-     - User clicks provider-specific login button
-     - Application generates unique state parameter
-     - User redirected to provider's authorization page
-     - Provider authenticates user and requests consent
+     - Client generates:
+       - State parameter (CSRF protection)
+       - Nonce (replay attack prevention)
+     - User redirected to provider's authorization endpoint with:
+       - `response_type=code`
+       - `client_id`
+       - `redirect_uri`
+       - `scope`
+       - `state`
+       - `nonce`
+       - `provider`
 
   2. **Authorization Code Exchange**
 
-     - Provider redirects back with authorization code
-     - Application exchanges code for access and refresh tokens
-     - Tokens are validated and stored securely
+     - Provider redirects back with:
+       - Authorization code
+       - State parameter
+     - Client exchanges code for tokens using:
+       - Authorization code
+       - Client credentials
+       - Redirect URI
 
   3. **Token Management**
 
-     - Access tokens are short-lived (1 hour)
-     - Refresh tokens are long-lived (7 days)
-     - Tokens are stored securely in HTTP-only cookies
+     - Access tokens (1 hour lifetime)
+       - Used for API access
+       - Contains minimal claims (sub, provider)
+     - Refresh tokens (7 days lifetime)
+       - Used for obtaining new access tokens
+       - Contains minimal claims (sub, provider)
+     - ID tokens (1 hour lifetime)
+       - Contains identity information
+       - Includes nonce for replay attack prevention
+       - Standard OpenID Connect claims:
+         - `iss` (Issuer)
+         - `sub` (Subject)
+         - `aud` (Audience)
+         - `exp` (Expiration)
+         - `iat` (Issued At)
+         - `nonce` (Nonce)
+     - Secure storage in HTTP-only cookies
      - Automatic token refresh before expiration
 
   4. **Provider-Specific Scopes**
@@ -135,9 +182,11 @@ The application supports OAuth 2.0 authentication with multiple providers:
      - Strava: `read`, `activity:read`
 
 - **Security Features**
-  - State parameter to prevent CSRF attacks
-  - PKCE (Proof Key for Code Exchange) support
-  - Secure token storage and transmission
+  - State parameter for CSRF protection
+  - Nonce in ID token for replay attack prevention
+  - HTTP-only cookies for token storage
+  - SameSite=strict cookie attributes
+  - Secure token transmission
   - Provider-specific client validation
   - Automatic cleanup of expired authorization codes
 
@@ -145,7 +194,7 @@ The application supports OAuth 2.0 authentication with multiple providers:
 
 - **Access Tokens**
 
-  - Short-lived (15 minutes)
+  - Short-lived (1 hour)
   - Stored in memory
   - Can be blacklisted if compromised
   - Proactively refreshed to prevent expiration during use
@@ -156,6 +205,14 @@ The application supports OAuth 2.0 authentication with multiple providers:
   - Stored in HTTP-only cookies
   - Device-specific
   - Automatically expire
+
+- **ID Tokens**
+
+  - Short-lived (1 hour)
+  - Contains identity information
+  - Includes nonce for replay attack prevention
+  - Standard OpenID Connect claims
+  - Used for identity verification
 
 - **Cookies**
   - HTTP-only (prevents XSS)
@@ -326,32 +383,6 @@ This project includes pre-configured VS Code debugging settings for both fronten
 ### Users
 
 - `GET /users/list` - Get list of users (protected)
-
-## Security Considerations
-
-1. **Token Storage**
-
-   - Access tokens stored in memory
-   - Refresh tokens in HTTP-only cookies
-   - No sensitive data in localStorage
-
-2. **Token Expiration**
-
-   - Access tokens: 15 seconds (for demo purposes)
-   - Refresh tokens: 7 days
-   - Automatic cleanup of expired tokens
-   - Proactive refresh 5 minutes before expiration
-
-3. **Device Management**
-
-   - Each device gets unique refresh token
-   - Sessions can be monitored and revoked
-   - Device information tracked for security
-
-4. **Error Handling**
-   - Proper error messages for security events
-   - Graceful handling of token expiration
-   - Secure error responses
 
 ## Project Structure
 

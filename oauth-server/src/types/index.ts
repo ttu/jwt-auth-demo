@@ -13,6 +13,7 @@ export type OAuthAuthorizationRequest = {
   redirect_uri: string;
   scope: string;
   state: string;
+  nonce: string;
   provider: OAuthProvider;
 };
 
@@ -30,7 +31,7 @@ export type OAuthTokenResponse = {
   token_type: 'Bearer';
   expires_in: number;
   refresh_token?: string;
-  id_token?: string;
+  id_token: string;
 };
 
 export type OAuthConfig = {

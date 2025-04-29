@@ -3,10 +3,38 @@ import jwt from 'jsonwebtoken';
 import { verifyAccessToken, verifyRefreshToken } from '../middleware/auth.middleware';
 import { storeToken, getUserSessions, revokeDeviceTokens, refreshTokens } from '../stores/refreshToken.store';
 import { blacklistToken } from '../stores/tokenBlacklist.store';
-import { DeviceInfo, User, RequestWithUser, OAuthUserInfo, RequestHandlerWithUser } from '../types/index';
+import { DeviceInfo, User, RequestWithUser, RequestHandlerWithUser } from '../types/index';
 import { settings } from '../config/settings';
+import { v4 as uuidv4 } from 'uuid';
 
 const router = Router();
+
+// Helper function to create JWT tokens
+const createToken = (
+  userId: number,
+  username: string,
+  deviceId: string,
+  secret: string,
+  expiresIn: number,
+  scope: string[]
+): string => {
+  return jwt.sign(
+    {
+      iss: 'your-app-name', // Your application name
+      sub: userId.toString(), // Subject (user ID)
+      aud: ['api'], // Audience (which services can use this token)
+      jti: uuidv4(), // Unique token ID
+      userId,
+      username,
+      deviceId,
+      scope,
+      version: '1.0', // Token version
+      iat: Math.floor(Date.now() / 1000), // Add issued at timestamp
+    },
+    secret,
+    { expiresIn }
+  );
+};
 
 // Dummy user data (in a real app, this would be in a database)
 const users: User[] = [
@@ -51,13 +79,23 @@ router.post('/login', async (req: Request, res: Response) => {
 
   try {
     // Generate tokens
-    const accessToken = jwt.sign({ userId: user.id, username: user.username }, settings.jwt.accessSecret, {
-      expiresIn: settings.jwt.accessTokenExpiry,
-    });
+    const accessToken = createToken(
+      user.id,
+      user.username,
+      deviceId,
+      settings.jwt.accessSecret,
+      settings.jwt.accessTokenExpiry,
+      ['read', 'write']
+    );
 
-    const refreshToken = jwt.sign({ userId: user.id, username: user.username }, settings.jwt.refreshSecret, {
-      expiresIn: settings.jwt.refreshTokenExpiry,
-    });
+    const refreshToken = createToken(
+      user.id,
+      user.username,
+      deviceId,
+      settings.jwt.refreshSecret,
+      settings.jwt.refreshTokenExpiry,
+      ['refresh']
+    );
 
     // Store refresh token in memory with expiration
     storeToken(refreshToken, user.id, deviceId, deviceInfo, settings.jwt.refreshTokenExpiry);
@@ -87,10 +125,13 @@ router.post('/login', async (req: Request, res: Response) => {
 // Refresh token route
 router.post('/refresh', verifyRefreshToken, (async (req: RequestWithUser, res: Response) => {
   try {
-    const accessToken = jwt.sign(
-      { userId: req.user!.userId, username: req.user!.username },
+    const accessToken = createToken(
+      req.user!.userId,
+      req.user!.username,
+      req.headers['x-device-id'] as string,
       settings.jwt.accessSecret,
-      { expiresIn: settings.jwt.accessTokenExpiry }
+      settings.jwt.accessTokenExpiry,
+      ['read', 'write']
     );
 
     res.json({ accessToken });
