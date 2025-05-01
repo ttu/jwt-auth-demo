@@ -5,6 +5,7 @@ import { DeviceInfo, RequestWithUser, OAuthUserInfo, OAuthState } from '../types
 import { settings } from '../config/settings';
 import { encodeState, decodeState } from '../utils/oauth.utils';
 import { generateNonce, validateNonce, cleanupNonces } from '../stores/nonce.store';
+import { setRefreshTokenCookie } from '../utils/cookie.utils';
 
 type TokenResponse = {
   access_token: string;
@@ -192,13 +193,8 @@ router.get('/callback/:provider', async (req: RequestWithUser, res) => {
     // Use the device ID from the state
     storeToken(refreshToken, userId, state.deviceId, deviceInfo, settings.jwt.refreshTokenExpiry);
 
-    // Set refresh token cookie
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: false, // This should be true. Now false for demo purposes
-      secure: settings.server.nodeEnv === 'production',
-      sameSite: 'strict',
-      maxAge: settings.jwt.refreshTokenExpiry * 1000, // Convert to milliseconds
-    });
+    // Set refresh token cookie using helper
+    setRefreshTokenCookie(res, refreshToken);
 
     // Redirect to frontend with tokens
     res.redirect(`http://localhost:3000/auth/callback?success=true&token=${accessToken}`);

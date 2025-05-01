@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { findToken, updateLastUsed } from '../stores/refreshToken.store';
+import { findToken, markTokenAsUsed } from '../stores/refreshToken.store';
 import { isTokenBlacklisted } from '../stores/tokenBlacklist.store';
 import { JwtPayload, RequestWithUser } from '../types/index';
 import { settings } from '../config/settings';
@@ -49,15 +49,15 @@ export const verifyRefreshToken = async (req: RequestWithUser, res: Response, ne
     // Ensure userId is a number
     const userId = typeof decoded.userId === 'string' ? parseInt(decoded.userId, 10) : decoded.userId;
 
-    // Check if the token exists in our store and is not revoked
+    // Check if the token exists in our store and is not revoked or used
     const storedToken = findToken(refreshToken, userId, deviceId);
 
     if (!storedToken) {
-      return res.status(401).json({ message: 'Invalid or revoked refresh token' });
+      return res.status(401).json({ message: 'Invalid, revoked, or already used refresh token' });
     }
 
-    // Update last used timestamp
-    updateLastUsed(refreshToken);
+    // Mark the token as used before proceeding
+    markTokenAsUsed(refreshToken);
 
     req.user = decoded;
     next();

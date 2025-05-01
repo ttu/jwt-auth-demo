@@ -6,6 +6,7 @@ import { blacklistToken } from '../stores/tokenBlacklist.store';
 import { DeviceInfo, User, RequestWithUser, RequestHandlerWithUser } from '../types/index';
 import { settings } from '../config/settings';
 import { v4 as uuidv4 } from 'uuid';
+import { setRefreshTokenCookie } from '../utils/cookie.utils';
 
 const router = Router();
 
@@ -107,13 +108,8 @@ router.post('/login', async (req: Request, res: Response) => {
       userAgent,
     });
 
-    // Set refresh token in HTTP-only cookie
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: false, // This should be true. Now false for demo purposes
-      secure: settings.server.nodeEnv === 'production',
-      sameSite: 'strict',
-      maxAge: settings.jwt.refreshTokenExpiry * 1000, // Convert to milliseconds
-    });
+    // Set refresh token in HTTP-only cookie using helper
+    setRefreshTokenCookie(res, refreshToken);
 
     res.json({ accessToken });
   } catch (error) {
@@ -125,14 +121,38 @@ router.post('/login', async (req: Request, res: Response) => {
 // Refresh token route
 router.post('/refresh', verifyRefreshToken, (async (req: RequestWithUser, res: Response) => {
   try {
+    const deviceId = req.headers['x-device-id'] as string;
+    const deviceInfo: DeviceInfo = {
+      userAgent: req.headers['user-agent'] as string,
+      platform: (req.headers['sec-ch-ua-platform'] as string) || 'unknown',
+      os: (req.headers['sec-ch-ua-platform'] as string) || 'unknown',
+    };
+
+    // Generate new access token
     const accessToken = createToken(
       req.user!.userId,
       req.user!.username,
-      req.headers['x-device-id'] as string,
+      deviceId,
       settings.jwt.accessSecret,
       settings.jwt.accessTokenExpiry,
       ['read', 'write']
     );
+
+    // Generate new refresh token
+    const newRefreshToken = createToken(
+      req.user!.userId,
+      req.user!.username,
+      deviceId,
+      settings.jwt.refreshSecret,
+      settings.jwt.refreshTokenExpiry,
+      ['refresh']
+    );
+
+    // Store the new refresh token
+    storeToken(newRefreshToken, req.user!.userId, deviceId, deviceInfo, settings.jwt.refreshTokenExpiry);
+
+    // Set the new refresh token in HTTP-only cookie using helper
+    setRefreshTokenCookie(res, newRefreshToken);
 
     res.json({ accessToken });
   } catch (error) {

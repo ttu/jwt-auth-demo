@@ -20,6 +20,7 @@ export type StoredToken = {
   lastUsedAt: Date;
   expiresAt: Date;
   isRevoked: boolean;
+  isUsed: boolean;
   id: string;
 };
 

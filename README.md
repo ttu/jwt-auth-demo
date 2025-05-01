@@ -16,7 +16,8 @@ A demonstration of JWT-based authentication with React frontend and Node.js back
 - **Secure Token-Based Authentication**
 
   - JWT-based authentication with access and refresh tokens
-  - HTTP-only cookies for refresh tokens
+  - Single-use refresh tokens for enhanced security
+  - HTTP-only cookies for refresh tokens (disabled in demo)
   - Device-specific session management
   - Token blacklisting for immediate invalidation
   - Enhanced JWT claims for improved security:
@@ -30,8 +31,10 @@ A demonstration of JWT-based authentication with React frontend and Node.js back
 
 - **Token Management**
 
-  - Short-lived access tokens (15 minutes)
+  - Short-lived access tokens (15 seconds for demo)
   - Long-lived refresh tokens with expiration (7 days)
+  - Single-use refresh tokens for enhanced security
+  - Token rotation on refresh
   - ID tokens for identity verification and nonce validation
   - Proactive token refresh system:
     - Checks token expiration every minute
@@ -45,16 +48,18 @@ A demonstration of JWT-based authentication with React frontend and Node.js back
   - Session listing and management
   - Ability to revoke specific device sessions
   - Automatic cleanup of expired sessions
+  - Single-use refresh tokens for enhanced security
 
 - **Security Features**
   - CSRF protection with SameSite cookies
-  - XSS protection with HTTP-only cookies
+  - XSS protection with HTTP-only cookies (disabled in demo)
   - Token blacklisting for immediate invalidation
   - Device tracking and management
   - Standard JWT claims for improved security
   - Permission-based token scoping
   - Replay attack prevention through unique token IDs
   - Version control for token format changes
+  - Single-use refresh tokens for enhanced security
 
 ## Authentication Flow
 
@@ -66,17 +71,28 @@ A demonstration of JWT-based authentication with React frontend and Node.js back
      X-Device-Id: <unique_device_id>
      ```
    - Server generates:
-     - Short-lived access token (15 minutes) with enhanced claims:
-       - Standard JWT claims (iss, sub, aud, jti)
-       - User information (userId, username)
-       - Device tracking (deviceId)
-       - Permission scoping (scope: ['read', 'write'])
-       - Version control (version: '1.0')
+     - Short-lived access token (15 seconds) with enhanced claims
      - Long-lived refresh token (7 days) with similar claims but restricted scope
    - Refresh token stored in HTTP-only cookie
    - Access token returned to client
 
-2. **OAuth Authentication**
+2. **Token Refresh Flow**
+
+   - Client detects access token expiration
+   - Client sends refresh token in HTTP-only cookie
+   - Server validates refresh token:
+     - Verifies JWT signature
+     - Checks token is not revoked or used
+     - Validates device ID
+   - Server generates new tokens:
+     - New access token
+     - New refresh token (single-use)
+   - Server marks old refresh token as used
+   - Server stores new refresh token
+   - Server sets new refresh token in HTTP-only cookie
+   - Server returns new access token
+
+3. **OAuth Authentication**
 
    - User clicks provider-specific login button
    - Application generates unique state parameter and nonce
@@ -92,7 +108,7 @@ A demonstration of JWT-based authentication with React frontend and Node.js back
    - Refresh token stored in HTTP-only cookie
    - Access token and ID token returned to client
 
-3. **Access Token Usage**
+4. **Access Token Usage**
 
    - Client stores access token in memory (not localStorage)
    - Access token included in Authorization header for all protected API requests:
@@ -103,21 +119,11 @@ A demonstration of JWT-based authentication with React frontend and Node.js back
    - If token is invalid or expired, client receives 401 response
    - Client-side interceptor handles token refresh on 401 responses
 
-4. **Token Refresh**
-
-   - Proactive refresh system:
-     - Monitors token expiration continuously
-     - Refreshes token 5 minutes before expiration
-     - Prevents race conditions from multiple refresh attempts
-     - Ensures uninterrupted user experience
-   - Server validates refresh token
-   - New access token issued if refresh token valid
-
 5. **Session Management**
-   - Each device gets unique refresh token
-   - Sessions tracked by device ID
-   - Users can view and revoke sessions
-   - Expired sessions automatically cleaned up
+   - User can view active sessions
+   - User can revoke specific sessions
+   - System automatically cleans up expired sessions
+   - System tracks device information for each session
 
 ## OAuth Implementation
 

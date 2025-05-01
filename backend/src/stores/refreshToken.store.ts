@@ -21,6 +21,7 @@ export const storeToken = (
     lastUsedAt: new Date(),
     expiresAt,
     isRevoked: false,
+    isUsed: false, // Track if token has been used
     id: uuidv4(), // Generate unique ID for the refresh token
   });
 };
@@ -30,26 +31,28 @@ export const findToken = (token: string, userId: number, deviceId: string): Stor
   const storedToken = refreshTokens.get(token);
   if (!storedToken) return null;
 
-  console.log('storedToken', storedToken);
-  console.log('userId', userId);
-  console.log('deviceId', deviceId);
   // Check if token is expired
   if (new Date() > storedToken.expiresAt) {
     refreshTokens.delete(token); // Clean up expired token
     return null;
   }
 
-  if (storedToken.userId === userId && storedToken.deviceId === deviceId && !storedToken.isRevoked) {
+  // Check if token is revoked or already used
+  if (storedToken.isRevoked || storedToken.isUsed) {
+    return null;
+  }
+
+  if (storedToken.userId === userId && storedToken.deviceId === deviceId) {
     return storedToken;
   }
   return null;
 };
 
-// Update last used timestamp
-export const updateLastUsed = (token: string): void => {
+// Mark a token as used
+export const markTokenAsUsed = (token: string): void => {
   const storedToken = refreshTokens.get(token);
   if (storedToken) {
-    storedToken.lastUsedAt = new Date();
+    storedToken.isUsed = true;
   }
 };
 
@@ -91,7 +94,7 @@ export const getUserSessions = (
 }> => {
   const sessions = [];
   for (const [token, data] of refreshTokens.entries()) {
-    if (data.userId === userId && new Date() < data.expiresAt) {
+    if (data.userId === userId && new Date() < data.expiresAt && !data.isRevoked && !data.isUsed) {
       sessions.push({
         id: data.id,
         deviceInfo: data.deviceInfo,

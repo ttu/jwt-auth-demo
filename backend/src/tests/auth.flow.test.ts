@@ -160,6 +160,28 @@ describe('Authentication Flow', () => {
 
       expect(response.status).toBe(200);
       expect(response.body).toHaveProperty('accessToken');
+      expect(response.headers['set-cookie']).toBeDefined();
+    });
+
+    it('should fail refresh with already used refresh token', async () => {
+      const user = createTestUser();
+      const device = createTestDevice();
+      const { refreshToken } = await loginUser(user, device);
+
+      // First refresh attempt
+      await request(app)
+        .post('/api/auth/refresh')
+        .set('Cookie', [`refreshToken=${refreshToken}`])
+        .set('x-device-id', device.deviceId);
+
+      // Second refresh attempt with same token
+      const response = await request(app)
+        .post('/api/auth/refresh')
+        .set('Cookie', [`refreshToken=${refreshToken}`])
+        .set('x-device-id', device.deviceId);
+
+      expect(response.status).toBe(401);
+      expect(response.body.message).toBe('Invalid, revoked, or already used refresh token');
     });
 
     it('should fail refresh with invalid refresh token', async () => {
