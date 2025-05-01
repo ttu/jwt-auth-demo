@@ -1,9 +1,6 @@
 import { api } from '../api/auth';
 import jwt_decode from 'jwt-decode';
 
-const AUTH_INTERVAL_MS = 60000; // Check every minute
-const TOKEN_REFRESH_THRESHOLD = 5; // Refresh 5 minutes before expiration
-const INITIAL_REFRESH_DELAY = 5000; // Wait 5 seconds before first refresh check
 const ACCESS_TOKEN_KEY = 'access_token';
 
 let refreshTimeout: NodeJS.Timeout | undefined = undefined;
@@ -20,7 +17,7 @@ export const setAccessToken = (token: string | undefined) => {
       clearTimeout(refreshTimeout);
     }
     console.info('[Auth Service] Scheduling token expiration check');
-    refreshTimeout = setTimeout(checkTokenExpiration, INITIAL_REFRESH_DELAY);
+    refreshTimeout = setTimeout(checkTokenExpiration, 5000); // First check 5 seconds after token is set
   } else {
     console.info('[Auth Service] Removing access token and authorization header');
     localStorage.removeItem(ACCESS_TOKEN_KEY);
@@ -35,7 +32,6 @@ export const setAccessToken = (token: string | undefined) => {
 
 export const getAccessToken = () => {
   const token = localStorage.getItem(ACCESS_TOKEN_KEY);
-  console.info('[Auth Service] Getting access token:', token ? 'Token present' : 'No token');
   return token || undefined;
 };
 
@@ -74,7 +70,8 @@ const checkTokenExpiration = () => {
     const timeUntilExpiration = expirationTime - Date.now();
     console.info(`[Auth Service] Token expires in ${Math.round(timeUntilExpiration / 1000)} seconds`);
 
-    if (timeUntilExpiration <= AUTH_INTERVAL_MS * TOKEN_REFRESH_THRESHOLD) {
+    if (timeUntilExpiration <= 2000) {
+      // Refresh if token expires in less than 2 seconds
       console.info('[Auth Service] Token close to expiration, refreshing');
       tryRefreshToken();
     } else {
@@ -83,7 +80,7 @@ const checkTokenExpiration = () => {
         console.info('[Auth Service] Clearing existing refresh timeout');
         clearTimeout(refreshTimeout);
       }
-      const nextCheckDelay = timeUntilExpiration - AUTH_INTERVAL_MS * TOKEN_REFRESH_THRESHOLD;
+      const nextCheckDelay = timeUntilExpiration - 1000; // Refresh token 1 second before it expires
       console.info(`[Auth Service] Scheduling next token check in ${Math.round(nextCheckDelay / 1000)} seconds`);
       refreshTimeout = setTimeout(checkTokenExpiration, nextCheckDelay);
     }
@@ -95,5 +92,5 @@ const checkTokenExpiration = () => {
 
 // Initialize token check if we have a token
 const token = getAccessToken();
-console.info('[Auth Service] Initializing auth service');
+console.info('[Auth Service] Initializing auth service. Token:', token ? 'Token present' : 'No token');
 setAccessToken(token);
