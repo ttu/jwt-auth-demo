@@ -6,6 +6,7 @@ import Users from './components/Users';
 import Sessions from './components/Sessions';
 import Navigation from './components/Navigation';
 import OAuthCallback from './components/OAuthCallback';
+import { DebugTokenView } from './components/DebugTokenView';
 
 interface RouteProps {
   children: React.ReactNode;
@@ -79,6 +80,7 @@ const App: React.FC = () => {
           <Route path="/auth/callback" element={<OAuthCallback />} />
           <Route path="/" element={<Navigate to="/login" />} />
         </Routes>
+        <DebugTokenView />
       </Router>
     </AuthProvider>
   );
