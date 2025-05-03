@@ -20,7 +20,7 @@ export type SessionsResponse = {
 
 export const getActiveSessions = async (): Promise<SessionsResponse> => {
   try {
-    const response = await api.get('/auth/sessions');
+    const response = await api.get('/sessions');
     return response.data;
   } catch (error) {
     console.error('Error fetching sessions:', error);
@@ -31,7 +31,7 @@ export const getActiveSessions = async (): Promise<SessionsResponse> => {
 export const revokeSession = async (sessionId: string): Promise<void> => {
   try {
     console.log('Revoking session with ID:', sessionId);
-    const response = await api.post('/auth/sessions/revoke', { sessionId });
+    const response = await api.post('/sessions/revoke', { sessionId });
     console.log('Revoke response:', response.data);
   } catch (error) {
     console.error('Error revoking session:', error);

@@ -376,19 +376,19 @@ This project includes pre-configured VS Code debugging settings for both fronten
 
 ### Authentication
 
-- `POST /auth/login` - User login
-- `POST /auth/refresh` - Refresh access token
-- `POST /auth/logout` - Logout user
-- `POST /auth/invalidate-token` - Invalidate current access token
+- `POST /api/auth/login` - User login
+- `POST /api/auth/refresh` - Refresh access token
+- `POST /api/auth/logout` - Logout user
+- `POST /api/auth/invalidate-token` - Invalidate current access token
 
 ### Session Management
 
-- `GET /auth/sessions` - Get active sessions
-- `POST /auth/sessions/revoke` - Revoke specific session
+- `GET /api/sessions` - Get active sessions
+- `POST /api/sessions/revoke` - Revoke specific session
 
 ### Users
 
-- `GET /users/list` - Get list of users (protected)
+- `GET /api/users/list` - Get list of users (protected)
 
 ## Project Structure
 
