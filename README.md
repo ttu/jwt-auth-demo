@@ -16,7 +16,6 @@ A demonstration of JWT-based authentication with React frontend and Node.js back
 - **Secure Token-Based Authentication**
 
   - JWT-based authentication with access and refresh tokens
-  - Single-use refresh tokens for enhanced security
   - HTTP-only cookies for refresh tokens (disabled in demo)
   - Device-specific session management
   - Token blacklisting for immediate invalidation
@@ -44,10 +43,11 @@ A demonstration of JWT-based authentication with React frontend and Node.js back
 
 - **Session Management**
 
-  - Device-specific sessions
-  - Session listing and management
-  - Ability to revoke specific device sessions
-  - Automatic cleanup of expired sessions
+  - Virtual sessions maintained through a chain of single-use refresh tokens
+  - Each session is identified by a device ID and maintained through token rotation
+  - Session listing and management through tracking active device IDs
+  - Ability to revoke specific device sessions by invalidating all tokens for that device
+  - Automatic cleanup of expired tokens
   - Single-use refresh tokens for enhanced security
 
 - **Security Features**
@@ -75,6 +75,7 @@ A demonstration of JWT-based authentication with React frontend and Node.js back
      - Long-lived refresh token (7 days) with similar claims but restricted scope
    - Refresh token stored in HTTP-only cookie
    - Access token returned to client
+   - Each refresh token represents a virtual session for that device
 
 2. **Token Refresh Flow**
 
@@ -120,10 +121,13 @@ A demonstration of JWT-based authentication with React frontend and Node.js back
    - Client-side interceptor handles token refresh on 401 responses
 
 5. **Session Management**
-   - User can view active sessions
-   - User can revoke specific sessions
-   - System automatically cleans up expired sessions
-   - System tracks device information for each session
+   - Virtual sessions are maintained through a chain of single-use refresh tokens
+   - Each session is identified by a device ID and persists through token rotation
+   - User can view active sessions by listing devices with valid token chains
+   - User can revoke specific sessions by invalidating all tokens for a device
+   - System automatically cleans up expired tokens
+   - System tracks device information for each token chain
+   - No traditional server-side session storage is used
 
 ## OAuth Implementation
 

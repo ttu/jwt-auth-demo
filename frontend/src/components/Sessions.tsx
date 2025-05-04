@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { getActiveSessions, revokeSession } from '../api/sessions';
+import { getDeviceId } from '../utils/device';
 
 interface DeviceInfo {
   userAgent: string;
@@ -43,9 +44,9 @@ const Sessions: React.FC = () => {
     fetchSessions();
   }, []);
 
-  const handleRevokeSession = async (sessionId: string) => {
+  const handleRevokeSession = async (deviceId: string) => {
     try {
-      await revokeSession(sessionId);
+      await revokeSession(deviceId);
       // Refresh the sessions list after successful revocation
       await fetchSessions();
     } catch (err) {
@@ -89,7 +90,7 @@ const Sessions: React.FC = () => {
               </div>
               {!session.isRevoked && (
                 <button
-                  onClick={() => handleRevokeSession(session.id)}
+                  onClick={() => handleRevokeSession(getDeviceId())}
                   className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors"
                 >
                   Revoke

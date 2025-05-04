@@ -1,16 +1,5 @@
 import axios from 'axios';
-
-const DEVICE_ID_KEY = 'deviceId';
-
-// Generate a unique device ID or get it from storage
-const getDeviceId = () => {
-  let deviceId = localStorage.getItem(DEVICE_ID_KEY);
-  if (!deviceId) {
-    deviceId = crypto.randomUUID();
-    localStorage.setItem(DEVICE_ID_KEY, deviceId);
-  }
-  return deviceId;
-};
+import { getDeviceId } from '../utils/device';
 
 const api = axios.create({
   baseURL: 'http://localhost:3001/api',

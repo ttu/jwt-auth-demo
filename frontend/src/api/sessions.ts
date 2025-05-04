@@ -28,10 +28,10 @@ export const getActiveSessions = async (): Promise<SessionsResponse> => {
   }
 };
 
-export const revokeSession = async (sessionId: string): Promise<void> => {
+export const revokeSession = async (deviceId: string): Promise<void> => {
   try {
-    console.log('Revoking session with ID:', sessionId);
-    const response = await api.post('/sessions/revoke', { sessionId });
+    console.log('Revoking session with device ID:', deviceId);
+    const response = await api.post('/sessions/revoke', { deviceId });
     console.log('Revoke response:', response.data);
   } catch (error) {
     console.error('Error revoking session:', error);
