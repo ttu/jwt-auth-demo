@@ -25,7 +25,6 @@ const Sessions: React.FC = () => {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { logout } = useAuth();
 
   const fetchSessions = async () => {
     try {
