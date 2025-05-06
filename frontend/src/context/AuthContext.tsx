@@ -1,11 +1,18 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { getAccessToken, tryRefreshToken } from '../services/auth';
+import {
+  clearAccessToken,
+  getAccessToken,
+  checkTokenValidity,
+  setAccessToken,
+  tryRefreshToken,
+  startTokenRefresh,
+} from '../services/auth';
 import { login, logout } from '../api/auth';
 
 interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (username: string, password: string) => Promise<void>;
+  passwordLogin: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   getAccessToken: () => string | undefined;
 }
@@ -20,32 +27,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const checkAuth = async () => {
       // Check if we have a token on initial load
       const token = getAccessToken();
-      console.log('AuthContext: Initial token check', { hasAccessToken: !!token });
+      console.log('[AuthContext] Initial token check', { hasAccessToken: !!token });
 
       // Check refresh token from cookie
       // NOTE: If httpOnly is true, the refresh token will not be accessible to JavaScript
       const refreshToken = document.cookie.split('; ').find(row => row.startsWith('refreshToken='));
-      console.log('AuthContext: Refresh token check', { hasRefreshToken: !!refreshToken });
+      console.log('[AuthContext] Refresh token check', { hasRefreshToken: !!refreshToken });
 
-      if (!token) {
-        // If we don't have an access token, try to refresh it
-        // The refresh token will be sent automatically in the cookie
-        const refreshed = await tryRefreshToken();
-        console.log('AuthContext: Token refresh attempt', { success: refreshed });
+      if (token) {
+        const isTokenValid = await checkTokenValidity(token);
+        if (isTokenValid) {
+          startTokenRefresh(token);
+          setIsAuthenticated(true);
+          setIsLoading(false);
+          return;
+        }
       }
 
-      setIsAuthenticated(!!getAccessToken());
+      // If we don't have an access token, try to refresh it
+      // The refresh token will be sent automatically in the cookie
+      const refreshSuccess = await tryRefreshToken();
+      console.log('[AuthContext] Token refresh attempt', { success: refreshSuccess });
+      setIsAuthenticated(refreshSuccess);
       setIsLoading(false);
     };
 
     checkAuth();
   }, []);
 
-  const handleLogin = async (username: string, password: string) => {
+  const handlePasswordLogin = async (username: string, password: string) => {
     try {
-      await login(username, password);
+      const response = await login(username, password);
+      console.log('[AuthContext] Login response', response);
+      setAccessToken(response.accessToken);
       setIsAuthenticated(true);
     } catch (error) {
+      console.log('[AuthContext] Login failed', error);
       throw new Error('Login failed');
     }
   };
@@ -53,9 +70,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const handleLogout = async () => {
     try {
       await logout();
+      clearAccessToken();
       setIsAuthenticated(false);
     } catch (error) {
-      console.error('Logout failed:', error);
+      console.error('[AuthContext] Logout failed:', error);
     }
   };
 
@@ -64,7 +82,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       value={{
         isAuthenticated,
         isLoading,
-        login: handleLogin,
+        passwordLogin: handlePasswordLogin,
         logout: handleLogout,
         getAccessToken,
       }}

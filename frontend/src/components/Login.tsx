@@ -11,7 +11,7 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState('password123');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { passwordLogin } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -19,7 +19,7 @@ const Login: React.FC = () => {
     setError('');
 
     try {
-      await login(username, password);
+      await passwordLogin(username, password);
       navigate('/users');
     } catch (err) {
       setError('Invalid credentials');

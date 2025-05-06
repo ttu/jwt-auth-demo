@@ -1,5 +1,5 @@
 import api from './config';
-import { getAccessToken, tryRefreshToken } from '../services/auth';
+import { clearAccessToken } from '../services/auth';
 
 // Set up response interceptor for token refresh
 api.interceptors.response.use(
@@ -8,14 +8,20 @@ api.interceptors.response.use(
     const originalRequest = error.config;
 
     if (error.response?.status === 401 && !originalRequest._retry) {
-      console.log('[Interceptor] Received 401, refreshing token');
-      originalRequest._retry = true;
-      const refreshed = await tryRefreshToken();
-      if (refreshed) {
-        console.log('[Interceptor] Token refreshed, retrying request');
-        originalRequest.headers['Authorization'] = `Bearer ${getAccessToken()}`;
-        return api(originalRequest);
-      }
+      console.log('[Interceptor] Received 401, redirecting to login');
+      // We could try to refresh the token, but we have background refresh handling
+      // If we don't have a token, we should just redirect to login
+      clearAccessToken();
+      window.location.href = '/login';
+
+      // Example of how we could refresh the token
+      //originalRequest._retry = true;
+      //const refreshed = await tryRefreshToken();
+      //if (refreshed) {
+      //  console.log('[Interceptor] Token refreshed, retrying request');
+      //  originalRequest.headers['Authorization'] = `Bearer ${getAccessToken()}`;
+      //  return api(originalRequest);
+      //}
     }
 
     return Promise.reject(error);
