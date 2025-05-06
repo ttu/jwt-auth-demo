@@ -1,13 +1,13 @@
 // In-memory store for blacklisted access tokens
 const blacklistedTokens = new Set<string>();
 
-// Add a token to the blacklist
-export const blacklistToken = (token: string): void => {
+// Add an access token to the blacklist
+export const blacklistAccessToken = (token: string): void => {
   blacklistedTokens.add(token);
 };
 
-// Check if a token is blacklisted
-export const isTokenBlacklisted = (token: string): boolean => {
+// Check if an access token is blacklisted
+export const isAccessTokenBlacklisted = (token: string): boolean => {
   return blacklistedTokens.has(token);
 };
 

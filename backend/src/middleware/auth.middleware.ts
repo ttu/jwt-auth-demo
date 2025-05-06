@@ -1,7 +1,7 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { findToken, markTokenAsUsed } from '../stores/refreshToken.store';
-import { isTokenBlacklisted } from '../stores/tokenBlacklist.store';
+import { findRefreshToken, markRefreshTokenAsUsed } from '../stores/refreshToken.store';
+import { isAccessTokenBlacklisted } from '../stores/tokenBlacklist.store';
 import { JwtPayload, RequestWithUser } from '../types/index';
 import { settings } from '../config/settings';
 
@@ -15,7 +15,7 @@ export const verifyAccessToken = (req: RequestWithUser, res: Response, next: Nex
   const token = authHeader.split(' ')[1];
 
   // Check if token is blacklisted
-  if (isTokenBlacklisted(token)) {
+  if (isAccessTokenBlacklisted(token)) {
     return res.status(401).json({ message: 'Token has been revoked' });
   }
 
@@ -33,12 +33,12 @@ export const verifyRefreshToken = async (req: RequestWithUser, res: Response, ne
   const deviceId = req.headers['x-device-id'] as string;
 
   if (!refreshToken) {
-    console.log('No refresh token provided');
+    console.log('[Auth Middleware] No refresh token provided');
     return res.status(401).json({ message: 'No refresh token provided' });
   }
 
   if (!deviceId) {
-    console.log('No device ID provided');
+    console.log('[Auth Middleware] No device ID provided');
     return res.status(401).json({ message: 'Device ID is required' });
   }
 
@@ -50,19 +50,19 @@ export const verifyRefreshToken = async (req: RequestWithUser, res: Response, ne
     const userId = typeof decoded.userId === 'string' ? parseInt(decoded.userId, 10) : decoded.userId;
 
     // Check if the token exists in our store and is not revoked or used
-    const storedToken = findToken(refreshToken, userId, deviceId);
+    const storedToken = findRefreshToken(refreshToken, userId, deviceId);
 
     if (!storedToken) {
       return res.status(401).json({ message: 'Invalid, revoked, or already used refresh token' });
     }
 
     // Mark the token as used before proceeding
-    markTokenAsUsed(refreshToken);
+    markRefreshTokenAsUsed(refreshToken);
 
     req.user = decoded;
     next();
   } catch (error) {
-    console.error('Refresh token verification error:', error);
+    console.error('[Auth Middleware] Refresh token verification error:', error);
     return res.status(401).json({ message: 'Invalid refresh token' });
   }
 };

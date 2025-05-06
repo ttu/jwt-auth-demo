@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 export const refreshTokens = new Map<string, StoredToken>();
 
 // Store a refresh token
-export const storeToken = (
+export const storeRefreshToken = (
   token: string,
   userId: number,
   deviceId: string,
@@ -27,7 +27,7 @@ export const storeToken = (
 };
 
 // Find a refresh token
-export const findToken = (token: string, userId: number, deviceId: string): StoredToken | null => {
+export const findRefreshToken = (token: string, userId: number, deviceId: string): StoredToken | null => {
   const storedToken = refreshTokens.get(token);
   if (!storedToken) return null;
 
@@ -48,33 +48,24 @@ export const findToken = (token: string, userId: number, deviceId: string): Stor
   return null;
 };
 
-// Mark a token as used
-export const markTokenAsUsed = (token: string): void => {
+// Mark a refresh token as used
+export const markRefreshTokenAsUsed = (token: string): void => {
   const storedToken = refreshTokens.get(token);
   if (storedToken) {
     storedToken.isUsed = true;
   }
 };
 
-// Revoke a token
-export const revokeToken = (token: string): void => {
+// Revoke a refresh token
+export const revokeRefreshToken = (token: string): void => {
   const storedToken = refreshTokens.get(token);
   if (storedToken) {
     storedToken.isRevoked = true;
   }
 };
 
-// Revoke all tokens for a user and device
-export const revokeUserDeviceTokens = (userId: number, userAgent: string): void => {
-  for (const [token, data] of refreshTokens.entries()) {
-    if (data.userId === userId && data.deviceInfo.userAgent === userAgent && !data.isRevoked) {
-      data.isRevoked = true;
-    }
-  }
-};
-
-// Revoke all tokens for a device
-export const revokeDeviceTokens = (deviceId: string): void => {
+// Revoke all refresh tokens for a device
+export const revokeDeviceRefreshTokens = (deviceId: string): void => {
   for (const [token, data] of refreshTokens.entries()) {
     if (data.deviceId === deviceId && !data.isRevoked) {
       data.isRevoked = true;

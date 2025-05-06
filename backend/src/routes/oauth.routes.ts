@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import jwt from 'jsonwebtoken';
-import { storeToken } from '../stores/refreshToken.store';
+import { storeRefreshToken } from '../stores/refreshToken.store';
 import { DeviceInfo, RequestWithUser, OAuthUserInfo, OAuthState } from '../types/index';
 import { settings } from '../config/settings';
 import { encodeState, decodeState } from '../utils/oauth.utils';
@@ -191,7 +191,7 @@ router.get('/callback/:provider', async (req: RequestWithUser, res) => {
     };
 
     // Use the device ID from the state
-    storeToken(refreshToken, userId, state.deviceId, deviceInfo, settings.jwt.refreshTokenExpiry);
+    storeRefreshToken(refreshToken, userId, state.deviceId, deviceInfo, settings.jwt.refreshTokenExpiry);
 
     // Set refresh token cookie using helper
     setRefreshTokenCookie(res, refreshToken);

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { verifyAccessToken } from '../middleware/auth.middleware';
 import { getUserSessions, refreshTokens } from '../stores/refreshToken.store';
-import { RequestWithUser, RequestHandlerWithUser, StoredToken } from '../types/index';
+import { RequestWithUser, RequestHandlerWithUser } from '../types/index';
 
 const router = Router();
 

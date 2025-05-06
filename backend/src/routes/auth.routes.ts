@@ -1,8 +1,8 @@
 import { Router, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { verifyAccessToken, verifyRefreshToken } from '../middleware/auth.middleware';
-import { storeToken, revokeDeviceTokens } from '../stores/refreshToken.store';
-import { blacklistToken } from '../stores/tokenBlacklist.store';
+import { storeRefreshToken, revokeDeviceRefreshTokens } from '../stores/refreshToken.store';
+import { blacklistAccessToken } from '../stores/tokenBlacklist.store';
 import { DeviceInfo, User, RequestWithUser, RequestHandlerWithUser } from '../types/index';
 import { settings } from '../config/settings';
 import { v4 as uuidv4 } from 'uuid';
@@ -53,15 +53,15 @@ router.post('/login', async (req: Request, res: Response) => {
   const userAgent = req.headers['user-agent'] as string;
   const platform = (req.headers['sec-ch-ua-platform'] as string) || 'unknown';
 
-  console.log('Login request:', { username, deviceId, userAgent, platform });
+  console.log('[Auth route] Login request:', { username, deviceId, userAgent, platform });
 
   // Validate required headers
   if (!deviceId) {
-    console.error('Login failed: Device ID is required');
+    console.error('[Auth route] Login failed: Device ID is required');
     return res.status(400).json({ message: 'Device ID is required' });
   }
   if (!userAgent) {
-    console.error('Login failed: User agent is required');
+    console.error('[Auth route] Login failed: User agent is required');
     return res.status(400).json({ message: 'User agent is required' });
   }
 
@@ -74,7 +74,7 @@ router.post('/login', async (req: Request, res: Response) => {
   const user = users.find(u => u.username === username && u.password === password);
 
   if (!user) {
-    console.error('Login failed: Invalid credentials for user:', username);
+    console.error('[Auth route] Login failed: Invalid credentials for user:', username);
     return res.status(401).json({ message: 'Invalid credentials' });
   }
 
@@ -99,9 +99,9 @@ router.post('/login', async (req: Request, res: Response) => {
     );
 
     // Store refresh token in memory with expiration
-    storeToken(refreshToken, user.id, deviceId, deviceInfo, settings.jwt.refreshTokenExpiry);
+    storeRefreshToken(refreshToken, user.id, deviceId, deviceInfo, settings.jwt.refreshTokenExpiry);
 
-    console.log('Login successful:', {
+    console.log('[Auth route] Login successful:', {
       userId: user.id,
       username: user.username,
       deviceId,
@@ -113,7 +113,7 @@ router.post('/login', async (req: Request, res: Response) => {
 
     res.json({ accessToken });
   } catch (error) {
-    console.error('Token generation error:', error);
+    console.error('[Auth route] Token generation error:', error);
     res.status(500).json({ message: 'Error generating tokens' });
   }
 });
@@ -149,14 +149,14 @@ router.post('/refresh', verifyRefreshToken, (async (req: RequestWithUser, res: R
     );
 
     // Store the new refresh token
-    storeToken(newRefreshToken, req.user!.userId, deviceId, deviceInfo, settings.jwt.refreshTokenExpiry);
+    storeRefreshToken(newRefreshToken, req.user!.userId, deviceId, deviceInfo, settings.jwt.refreshTokenExpiry);
 
     // Set the new refresh token in HTTP-only cookie using helper
     setRefreshTokenCookie(res, newRefreshToken);
 
     res.json({ accessToken });
   } catch (error) {
-    console.error('Token refresh error:', error);
+    console.error('[Auth route] Token refresh error:', error);
     res.status(500).json({ message: 'Error refreshing token' });
   }
 }) as RequestHandlerWithUser);
@@ -166,46 +166,46 @@ router.post('/logout', verifyAccessToken, (async (req: RequestWithUser, res: Res
   const deviceId = req.headers['x-device-id'] as string;
   const accessToken = req.headers.authorization?.split(' ')[1];
 
-  console.log('Logout request:', { deviceId, userId: req.user?.userId });
+  console.log('[Auth route] Logout request:', { deviceId, userId: req.user?.userId });
 
   // If device ID is provided, revoke tokens for that device
   if (deviceId) {
     try {
-      revokeDeviceTokens(deviceId);
+      revokeDeviceRefreshTokens(deviceId);
     } catch (error) {
-      console.error('Error revoking device tokens:', error);
+      console.error('[Auth route] Error revoking device tokens:', error);
     }
   }
 
   // Blacklist the current access token
   if (accessToken) {
-    console.log('Blacklisting access token');
-    blacklistToken(accessToken);
+    console.log('[Auth route] Blacklisting access token');
+    blacklistAccessToken(accessToken);
   }
 
   // Always clear the refresh token cookie
   res.clearCookie('refreshToken');
-  console.log('Logout successful');
+  console.log('[Auth route] Logout successful');
   res.json({ message: 'Logged out successfully' });
 }) as RequestHandlerWithUser);
 
 // Invalidate current access token route
 router.post('/invalidate-token', verifyRefreshToken, async (req: Request, res: Response) => {
-  console.log('Invalidate token request');
+  console.log('[Auth route] Invalidate token request');
 
   const accessToken = req.headers.authorization?.split(' ')[1];
 
   if (!accessToken) {
-    console.error('Invalidate token failed: No access token provided');
+    console.error('[Auth route] Invalidate token failed: No access token provided');
     return res.status(400).json({ message: 'No access token provided' });
   }
 
   try {
-    blacklistToken(accessToken);
-    console.log('Token invalidated successfully');
+    blacklistAccessToken(accessToken);
+    console.log('[Auth route] Token invalidated successfully');
     res.json({ message: 'Token invalidated successfully' });
   } catch (error) {
-    console.error('Error invalidating token:', error);
+    console.error('[Auth route] Error invalidating token:', error);
     res.status(500).json({ message: 'Error invalidating token' });
   }
 });
