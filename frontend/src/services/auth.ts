@@ -1,35 +1,18 @@
+import { getAccessTokenTimeUntilExpiration, getAccessToken, setAccessToken, clearAccessToken } from '../utils/token';
 import { api } from '../api/auth';
-import jwt_decode from 'jwt-decode';
 
-const ACCESS_TOKEN_KEY = 'access_token';
 const TOKEN_EXPIRATION_THRESHOLD = 2000;
+
+// NOTE: This implementation differs from common more simple approaches:
+// - Typically, applications know the access token's validity duration and set an interval to check expiration
+// - Here, we check the access token's expiration time and schedule the next refresh
+// - After refreshing, we schedule the next check based on the new token's expiration
+
+// TODO: Consider moving token refresh logic to a React hook for simpler implementation
 
 let refreshTimeout: NodeJS.Timeout | undefined = undefined;
 
-export const getAccessToken = (): string | undefined => {
-  const token = localStorage.getItem(ACCESS_TOKEN_KEY);
-  return token ?? undefined;
-};
-
-export const setAccessToken = (token: string): void => {
-  console.info('[Authentication] Setting access token:', token);
-  localStorage.setItem(ACCESS_TOKEN_KEY, token);
-  api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-};
-
-export const clearAccessToken = (): void => {
-  console.info('[Authentication] Removing access token, authorization header and refresh timeout');
-  clearRefreshTimeout();
-  localStorage.removeItem(ACCESS_TOKEN_KEY);
-  delete api.defaults.headers.common['Authorization'];
-};
-
-const resetRefreshTimeout = (accessToken: string, logoutFunction: () => void): void => {
-  clearRefreshTimeout();
-  startTokenRefresh(accessToken, logoutFunction);
-};
-
-const clearRefreshTimeout = () => {
+export const clearRefreshTimeout = () => {
   if (refreshTimeout) {
     console.info('[Authentication] Clearing refresh timeout');
     clearTimeout(refreshTimeout);
@@ -39,9 +22,7 @@ const clearRefreshTimeout = () => {
 
 export const checkTokenValidity = (accessToken: string): boolean => {
   try {
-    const decoded = jwt_decode<{ exp: number }>(accessToken);
-    const expirationTime = decoded.exp * 1000;
-    const timeUntilExpiration = expirationTime - Date.now();
+    const timeUntilExpiration = getAccessTokenTimeUntilExpiration(accessToken);
 
     if (timeUntilExpiration <= TOKEN_EXPIRATION_THRESHOLD) {
       console.info('[Authentication] Token close to expiration.');
@@ -56,7 +37,7 @@ export const checkTokenValidity = (accessToken: string): boolean => {
   }
 };
 
-export const tryRefreshAccessToken = async (): Promise<string | undefined> => {
+export const getNewAccessTokenWithRefresh = async (): Promise<string | undefined> => {
   try {
     const response = await api.post('/auth/refresh');
     console.info('[Authentication] Token refresh successful');
@@ -68,9 +49,7 @@ export const tryRefreshAccessToken = async (): Promise<string | undefined> => {
 };
 
 export const startTokenRefresh = async (accessToken: string, logoutFunction: () => void): Promise<void> => {
-  const decoded = jwt_decode<{ exp: number }>(accessToken);
-  const expirationTime = decoded.exp * 1000;
-  const timeUntilExpiration = expirationTime - Date.now();
+  const timeUntilExpiration = getAccessTokenTimeUntilExpiration(accessToken);
 
   if (refreshTimeout) {
     console.info('[Authentication] Clearing existing refresh timeout');
@@ -90,20 +69,20 @@ export const checkTokenExpiration = async (logoutFunction: () => void): Promise<
   }
 
   try {
-    const decoded = jwt_decode<{ exp: number }>(token);
-    const expirationTime = decoded.exp * 1000;
-    const timeUntilExpiration = expirationTime - Date.now();
+    const timeUntilExpiration = getAccessTokenTimeUntilExpiration(token);
     console.info(`[Authentication] Token expires in ${Math.round(timeUntilExpiration / 1000)} seconds`);
 
     // Token should be refreshed if it expires in less than 2 seconds
     if (timeUntilExpiration <= TOKEN_EXPIRATION_THRESHOLD) {
       console.info('[Authentication] Token close to expiration, refreshing');
-      const newAccessToken = await tryRefreshAccessToken();
+      const newAccessToken = await getNewAccessTokenWithRefresh();
       if (newAccessToken) {
         setAccessToken(newAccessToken);
-        resetRefreshTimeout(newAccessToken, logoutFunction);
+        clearRefreshTimeout();
+        startTokenRefresh(newAccessToken, logoutFunction);
       } else {
         clearAccessToken();
+        clearRefreshTimeout();
         logoutFunction();
       }
     } else {
@@ -112,16 +91,6 @@ export const checkTokenExpiration = async (logoutFunction: () => void): Promise<
   } catch (error) {
     console.error('[Authentication] Error checking token expiration:', error);
     clearAccessToken();
+    clearRefreshTimeout();
   }
-};
-
-export const consoleLogTokens = () => {
-  // Check if we have a token on initial load
-  const token = getAccessToken();
-  console.log('[Authentication] Initial token check', { hasAccessToken: !!token });
-
-  // Check refresh token from cookie
-  // NOTE: If httpOnly is true, the refresh token will not be accessible to JavaScript
-  const refreshToken = document.cookie.split('; ').find(row => row.startsWith('refreshToken='));
-  console.log('[Authentication] Refresh token check', { hasRefreshToken: !!refreshToken });
 };

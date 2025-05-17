@@ -1,14 +1,12 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import {
-  clearAccessToken,
-  getAccessToken,
+  clearRefreshTimeout,
   checkTokenValidity,
-  setAccessToken,
-  tryRefreshAccessToken,
+  getNewAccessTokenWithRefresh,
   startTokenRefresh,
-  consoleLogTokens,
 } from '../services/auth';
 import { login, logout } from '../api/auth';
+import { clearAccessToken, getAccessToken, setAccessToken } from '../utils/token';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -26,14 +24,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const noAccessTokenLogout = () => {
     clearAccessToken();
+    clearRefreshTimeout();
     setIsAuthenticated(false);
     window.location.href = '/login';
   };
 
   useEffect(() => {
     const initializeAuth = async () => {
-      consoleLogTokens();
-
       const token = getAccessToken();
 
       const isTokenValid = token ? checkTokenValidity(token) : false;
@@ -49,7 +46,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.info('[Auth Context] No token to check validity for');
       // If we don't have an access token, try to refresh it
       // The refresh token will be sent automatically in the cookie
-      const newAccessToken = await tryRefreshAccessToken();
+      const newAccessToken = await getNewAccessTokenWithRefresh();
       console.log('[AuthContext] Token refresh attempt', { success: !!newAccessToken });
       if (newAccessToken) {
         setAccessToken(newAccessToken);

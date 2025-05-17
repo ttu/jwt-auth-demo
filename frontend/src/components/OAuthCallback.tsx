@@ -1,7 +1,5 @@
 import React, { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { setAccessToken } from '../services/auth';
-
 const OAuthCallback: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -13,7 +11,8 @@ const OAuthCallback: React.FC = () => {
 
     if (success === 'true' && token) {
       // Store the access token
-      setAccessToken(token);
+      // TODO: Check how this is handled in the auth context
+      // setAccessToken(token);
       // Redirect to home page
       navigate('/');
     } else if (error) {
