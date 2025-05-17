@@ -1,5 +1,4 @@
 import api from './config';
-import { clearAccessToken } from '../services/auth';
 
 // Set up response interceptor for token refresh
 api.interceptors.response.use(
