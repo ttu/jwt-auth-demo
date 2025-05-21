@@ -18,7 +18,7 @@ let refreshTimeout: NodeJS.Timeout | undefined = undefined;
 
 export const clearRefreshTimeout = () => {
   if (refreshTimeout) {
-    console.info('[Authentication] Clearing refresh timeout');
+    console.info('[Token Refresh] Clearing refresh timeout');
     clearTimeout(refreshTimeout);
     refreshTimeout = undefined;
   }
@@ -27,10 +27,10 @@ export const clearRefreshTimeout = () => {
 export const getNewAccessTokenWithRefresh = async (): Promise<string | undefined> => {
   try {
     const response = await api.post('/auth/refresh');
-    console.info('[Authentication] Token refresh successful');
+    console.info('[Token Refresh] Token refresh successful');
     return response.data.accessToken;
   } catch (error) {
-    console.error('[Authentication] Token refresh failed:', error);
+    console.error('[Token Refresh] Token refresh failed:', error);
     return undefined;
   }
 };
@@ -39,29 +39,29 @@ export const startTokenRefresh = async (accessToken: string, logoutFunction: () 
   const timeUntilExpiration = getAccessTokenTimeUntilExpiration(accessToken);
 
   if (refreshTimeout) {
-    console.info('[Authentication] Clearing existing refresh timeout');
+    console.info('[Token Refresh] Clearing existing refresh timeout');
     clearTimeout(refreshTimeout);
   }
 
   const nextCheckDelay = timeUntilExpiration - TOKEN_EXPIRATION_THRESHOLD; // Refresh token x second before it expires
-  console.info(`[Authentication] Scheduling next token check in ${Math.round(nextCheckDelay / 1000)} seconds`);
+  console.info(`[Token Refresh] Scheduling next token check in ${Math.round(nextCheckDelay / 1000)} seconds`);
   refreshTimeout = setTimeout(() => checkTokenExpiration(logoutFunction), nextCheckDelay);
 };
 
-export const checkTokenExpiration = async (logoutFunction: () => void): Promise<void> => {
+const checkTokenExpiration = async (logoutFunction: () => void): Promise<void> => {
   const token = getAccessToken();
   if (!token) {
-    console.info('[Authentication] No token to check expiration for');
+    console.info('[Token Refresh] No token to check expiration for');
     return;
   }
 
   try {
     const timeUntilExpiration = getAccessTokenTimeUntilExpiration(token);
-    console.info(`[Authentication] Token expires in ${Math.round(timeUntilExpiration / 1000)} seconds`);
+    console.info(`[Token Refresh] Token expires in ${Math.round(timeUntilExpiration / 1000)} seconds`);
 
     // Token should be refreshed if it expires in less than 2 seconds
     if (timeUntilExpiration <= TOKEN_EXPIRATION_THRESHOLD) {
-      console.info('[Authentication] Token close to expiration, refreshing');
+      console.info('[Token Refresh] Token close to expiration, refreshing');
       const newAccessToken = await getNewAccessTokenWithRefresh();
       if (newAccessToken) {
         setAccessToken(newAccessToken);
@@ -76,7 +76,7 @@ export const checkTokenExpiration = async (logoutFunction: () => void): Promise<
       startTokenRefresh(token, logoutFunction);
     }
   } catch (error) {
-    console.error('[Authentication] Error checking token expiration:', error);
+    console.error('[Token Refresh] Error checking token expiration:', error);
     clearAccessToken();
     clearRefreshTimeout();
   }

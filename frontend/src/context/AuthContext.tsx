@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { login, logout } from '../api/auth';
-import { clearRefreshTimeout, getNewAccessTokenWithRefresh, startTokenRefresh } from '../services/tokenRefresh';
-import { clearAccessToken, getAccessToken, setAccessToken, checkTokenValidity } from '../utils/token';
+import * as authApi from '../api/auth';
+import * as refresh from '../services/tokenRefresh';
+import * as token from '../utils/token';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -13,39 +13,38 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// NOTE: Usually most of the auth logic is hidden in the SDK, but in this demo we want to show it in detail
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(!!getAccessToken());
+  const [isAuthenticated, setIsAuthenticated] = useState(!!token.getAccessToken());
   const [isLoading, setIsLoading] = useState(true);
 
-  const noAccessTokenLogout = () => {
-    clearAccessToken();
-    clearRefreshTimeout();
+  const noAccessTokenRedirect = () => {
     setIsAuthenticated(false);
     window.location.href = '/login';
   };
 
   useEffect(() => {
     const initializeAuth = async () => {
-      const token = getAccessToken();
-
-      const isTokenValid = token ? checkTokenValidity(token) : false;
+      const accessToken = token.getAccessToken();
+      const isTokenValid = accessToken ? token.checkTokenValidity(accessToken) : false;
 
       if (isTokenValid) {
-        setAccessToken(token!); // We need to set this so axios has the correct authorization header
-        startTokenRefresh(token!, noAccessTokenLogout); // We know the token is valid, so we can start the refresh timeout
+        // The token is valid, so we can start the refresh timeout
+        refresh.startTokenRefresh(accessToken!, noAccessTokenRedirect);
         setIsAuthenticated(true);
         setIsLoading(false);
         return;
       }
 
-      console.info('[Auth Context] No token to check validity for');
+      console.info('[AuthContext] No token or token is invalid, trying to refresh');
       // If we don't have an access token, try to refresh it
       // The refresh token will be sent automatically in the cookie
-      const newAccessToken = await getNewAccessTokenWithRefresh();
+      const newAccessToken = await refresh.getNewAccessTokenWithRefresh();
       console.log('[AuthContext] Token refresh attempt', { success: !!newAccessToken });
       if (newAccessToken) {
-        setAccessToken(newAccessToken);
-        startTokenRefresh(newAccessToken, noAccessTokenLogout);
+        token.setAccessToken(newAccessToken);
+        refresh.startTokenRefresh(newAccessToken, noAccessTokenRedirect);
       }
       setIsAuthenticated(!!newAccessToken);
       setIsLoading(false);
@@ -56,11 +55,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const handlePasswordLogin = async (username: string, password: string) => {
     try {
-      const response = await login(username, password);
+      const response = await authApi.login(username, password);
       const { accessToken } = response;
       console.log('[AuthContext] Login access token', accessToken);
-      setAccessToken(accessToken);
-      startTokenRefresh(accessToken, noAccessTokenLogout);
+
+      token.setAccessToken(accessToken);
+      refresh.startTokenRefresh(accessToken, noAccessTokenRedirect);
       setIsAuthenticated(true);
     } catch (error) {
       console.log('[AuthContext] Login failed', error);
@@ -70,8 +70,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const handleLogout = async () => {
     try {
-      await logout();
-      noAccessTokenLogout();
+      await authApi.logout();
+      token.clearAccessToken();
+      refresh.clearRefreshTimeout();
+      noAccessTokenRedirect();
     } catch (error) {
       console.error('[AuthContext] Logout failed:', error);
     }
@@ -84,7 +86,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isLoading,
         passwordLogin: handlePasswordLogin,
         logout: handleLogout,
-        getAccessToken,
+        getAccessToken: token.getAccessToken,
       }}
     >
       {children}

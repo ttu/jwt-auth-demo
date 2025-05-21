@@ -1,5 +1,3 @@
-import { api } from '../api/auth';
-
 import jwt_decode from 'jwt-decode';
 
 const ACCESS_TOKEN_KEY = 'access_token';
@@ -13,13 +11,11 @@ export const getAccessToken = (): string | undefined => {
 export const setAccessToken = (token: string): void => {
   console.info('[Authentication] Setting access token:', token);
   localStorage.setItem(ACCESS_TOKEN_KEY, token);
-  api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 };
 
 export const clearAccessToken = (): void => {
   console.info('[Authentication] Removing access token and authorization header');
   localStorage.removeItem(ACCESS_TOKEN_KEY);
-  delete api.defaults.headers.common['Authorization'];
 };
 
 export const getAccessTokenTimeUntilExpiration = (accessToken: string): number => {
