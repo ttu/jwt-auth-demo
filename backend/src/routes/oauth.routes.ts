@@ -44,6 +44,10 @@ router.get('/oauth/:provider', async (req: RequestWithUser, res) => {
   // Nonce is used to prevent CSRF attacks and to verify the response from the OAuth provider
   const nonce = generateNonce();
 
+  // State parameter contains device-specific information for session management
+  // Note: Some OAuth providers may not support nonce parameters directly.
+  // In such cases, the nonce could be embedded within the state parameter
+  // to maintain CSRF protection while ensuring provider compatibility.
   const state: OAuthState = {
     deviceId,
     timestamp: Date.now(),

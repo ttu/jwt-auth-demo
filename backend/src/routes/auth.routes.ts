@@ -11,14 +11,7 @@ import { setRefreshTokenCookie } from '../utils/cookie.utils';
 const router = Router();
 
 // Helper function to create JWT tokens
-const createToken = (
-  userId: number,
-  username: string,
-  deviceId: string,
-  secret: string,
-  expiresIn: number,
-  scope: string[]
-): string => {
+const createToken = (userId: number, username: string, secret: string, expiresIn: number, scope: string[]): string => {
   return jwt.sign(
     {
       iss: 'your-app-name', // Your application name
@@ -27,7 +20,6 @@ const createToken = (
       jti: uuidv4(), // Unique token ID
       userId,
       username,
-      deviceId,
       scope,
       version: '1.0', // Token version
       iat: Math.floor(Date.now() / 1000), // Add issued at timestamp
@@ -80,19 +72,14 @@ router.post('/login', async (req: Request, res: Response) => {
 
   try {
     // Generate tokens
-    const accessToken = createToken(
-      user.id,
-      user.username,
-      deviceId,
-      settings.jwt.accessSecret,
-      settings.jwt.accessTokenExpiry,
-      ['read', 'write']
-    );
+    const accessToken = createToken(user.id, user.username, settings.jwt.accessSecret, settings.jwt.accessTokenExpiry, [
+      'read',
+      'write',
+    ]);
 
     const refreshToken = createToken(
       user.id,
       user.username,
-      deviceId,
       settings.jwt.refreshSecret,
       settings.jwt.refreshTokenExpiry,
       ['refresh']
@@ -132,7 +119,6 @@ router.post('/refresh', verifyRefreshToken, (async (req: RequestWithUser, res: R
     const accessToken = createToken(
       req.user!.userId,
       req.user!.username,
-      deviceId,
       settings.jwt.accessSecret,
       settings.jwt.accessTokenExpiry,
       ['read', 'write']
@@ -142,7 +128,6 @@ router.post('/refresh', verifyRefreshToken, (async (req: RequestWithUser, res: R
     const newRefreshToken = createToken(
       req.user!.userId,
       req.user!.username,
-      deviceId,
       settings.jwt.refreshSecret,
       settings.jwt.refreshTokenExpiry,
       ['refresh']

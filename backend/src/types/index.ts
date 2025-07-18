@@ -31,7 +31,6 @@ export type JwtPayload = {
   jti: string; // JWT ID
   userId: number;
   username: string;
-  deviceId: string;
   scope: string[];
   version: string;
   iat?: number;
