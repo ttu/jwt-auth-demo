@@ -36,6 +36,11 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(morgan('dev'));
 
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/auth', oauthRoutes);
