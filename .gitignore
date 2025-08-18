@@ -28,3 +28,7 @@ yarn-error.log*
 
 # Cursor AI files
 .cursor/ 
+
+# Playwright
+integration-tests/test-results/
+integration-tests/playwright-report/

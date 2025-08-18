@@ -14,7 +14,12 @@
     "dev:backend": "cd backend && npm run dev",
     "dev:oauth": "cd oauth-server && npm run dev",
     "dev:frontend": "cd frontend && npm run dev",
-    "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install && cd ../oauth-server && npm install"
+    "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install && cd ../oauth-server && npm install && cd ../integration-tests && npm install",
+    "test:integration": "cd integration-tests && npm test",
+    "test:integration:debug": "cd integration-tests && npm run test:debug",
+    "test:integration:ui": "cd integration-tests && npm run test:ui",
+    "test:integration:headed": "cd integration-tests && npm run test:headed",
+    "install:integration": "cd integration-tests && npm run install-deps"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",

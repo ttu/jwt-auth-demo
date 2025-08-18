@@ -1,0 +1,20 @@
+{
+  "name": "react-node-jwt-integration-tests",
+  "version": "1.0.0",
+  "description": "Integration tests for React Node JWT Example",
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "test:debug": "playwright test --debug",
+    "test:ui": "playwright test --ui",
+    "test:headed": "playwright test --headed",
+    "install-deps": "npx playwright install"
+  },
+  "dependencies": {
+    "@playwright/test": "^1.40.0",
+    "axios": "^1.6.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.5"
+  }
+}
