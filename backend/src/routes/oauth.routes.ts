@@ -22,7 +22,7 @@ const oauthUsers: { [key: string]: OAuthUserInfo } = {};
 
 // OAuth login endpoint
 router.get('/oauth/:provider', async (req: RequestWithUser, res) => {
-  debugger;
+  // debugger; // OAUTH FLOW START - User clicks OAuth provider button, we prepare the authorization URL
   // This route is used to start the OAuth login process.
   // It redirects the user to the OAuth provider's authorization page.
   // - The deviceId is the unique device ID of the user's device.
@@ -55,6 +55,9 @@ router.get('/oauth/:provider', async (req: RequestWithUser, res) => {
 
   const encodedState = encodeState(state);
 
+  // debugger; // OAUTH URL CONSTRUCTION - Building the authorization URL with all required parameters
+  // At this point we have: provider, deviceId, nonce (CSRF protection), and state (device info)
+  // Next: Frontend will redirect user to this OAuth server URL for authentication
   const config = {
     clientId: `fake-${provider}-client-id`,
     redirectUri: `http://localhost:3001/api/auth/callback/${provider}`,
@@ -78,7 +81,9 @@ router.get('/oauth/:provider', async (req: RequestWithUser, res) => {
 
 // Handle OAuth callback
 router.get('/callback/:provider', async (req: RequestWithUser, res) => {
-  debugger;
+  // debugger; // OAUTH CALLBACK - User authenticated with OAuth server, now we have authorization code
+  // The OAuth server redirected user back here with: authorization code + state parameter
+  // Next: We'll exchange the code for access/refresh/ID tokens
   const { provider } = req.params;
   const { code, state: encodedState } = req.query;
 
@@ -97,7 +102,9 @@ router.get('/callback/:provider', async (req: RequestWithUser, res) => {
   }
 
   try {
-    // Exchange code for tokens
+    // debugger; // TOKEN EXCHANGE - About to exchange authorization code for OAuth tokens
+    // We're sending: code, client credentials, redirect_uri to OAuth server
+    // We'll receive: access_token, refresh_token, id_token from OAuth server
     console.log(`[OAuth route] Token exchange request:`, {
       code,
       redirect_uri: `http://localhost:3001/api/auth/callback/${provider}`,
@@ -134,7 +141,9 @@ router.get('/callback/:provider', async (req: RequestWithUser, res) => {
 
     const tokens = (await tokenResponse.json()) as TokenResponse;
 
-    // Validate nonce from ID token
+    // debugger; // TOKEN VALIDATION - Received OAuth tokens, now validating ID token nonce
+    // We have: access_token (for API calls), refresh_token (for renewal), id_token (for identity)
+    // Next: Validate nonce in ID token to prevent replay attacks
     if (!tokens.id_token) {
       console.log('[OAuth route] ID token missing');
       return res.status(400).json({ error: 'ID token missing' });
@@ -174,7 +183,9 @@ router.get('/callback/:provider', async (req: RequestWithUser, res) => {
       provider: userInfo.provider,
     });
 
-    // Store user info in memory
+    // debugger; // USER INFO RETRIEVED - Got user profile from OAuth server, now creating app tokens
+    // We have: user profile (id, email, name) from OAuth provider
+    // Next: Generate our own JWT tokens for this user session
     oauthUsers[userInfo.email] = userInfo;
 
     // Generate application tokens
@@ -194,7 +205,9 @@ router.get('/callback/:provider', async (req: RequestWithUser, res) => {
       os: (req.headers['sec-ch-ua-platform'] as string) || 'unknown',
     };
 
-    // Use the device ID from the state
+    // debugger; // SESSION CREATION - Storing refresh token and redirecting to frontend
+    // We're creating a device-specific session with refresh token storage
+    // Final step: Redirect user to frontend with success status and access token
     storeRefreshToken(refreshToken, userId, state.deviceId, deviceInfo, settings.jwt.refreshTokenExpiry);
 
     // Set refresh token cookie using helper

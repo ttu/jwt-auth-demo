@@ -15,24 +15,35 @@ const Login: React.FC = () => {
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
+    // debugger; // PASSWORD FORM SUBMIT - User clicked login button with username/password
+    // Form validation passed, now calling AuthContext to perform login
     e.preventDefault();
     setError('');
 
     try {
       await passwordLogin(username, password);
+      // debugger; // PASSWORD LOGIN SUCCESS - Login successful, navigating to protected content
+      // AuthContext confirmed login success, user is now authenticated
       navigate('/users');
     } catch (err) {
+      // debugger; // PASSWORD LOGIN FAILED - Login failed, showing error to user
+      // Login attempt failed, display error message for user to try again
       setError('Invalid credentials');
     }
   };
 
   const handleOAuthLogin = async (provider: OAuthProvider) => {
+    // debugger; // OAUTH BUTTON CLICK - User clicked OAuth provider button (Google, Microsoft, etc.)
+    // Starting OAuth flow for selected provider
     setIsLoading(true);
     setError('');
 
     try {
       await initiateOAuthLogin(provider);
+      // Note: If successful, user will be redirected to OAuth server, so this code won't continue
     } catch (err) {
+      // debugger; // OAUTH INITIATION FAILED - Failed to start OAuth flow
+      // OAuth initiation failed, showing error and resetting UI state
       setError('Failed to initiate OAuth login');
       setIsLoading(false);
     }

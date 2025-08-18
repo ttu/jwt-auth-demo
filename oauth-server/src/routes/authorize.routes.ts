@@ -8,6 +8,9 @@ const router = express.Router();
 
 // Authorization endpoint
 router.get('/authorize', (req, res) => {
+  // debugger; // OAUTH SERVER: Authorization Request - User redirected here from main app
+  // We received: response_type, client_id, redirect_uri, scope, state, nonce, provider
+  // Next: Validate request parameters and show authorization consent page
   const { response_type, client_id, redirect_uri, scope, state, nonce, provider } =
     req.query as unknown as OAuthAuthorizationRequest;
 
@@ -37,7 +40,9 @@ router.get('/authorize', (req, res) => {
     return res.status(400).json({ error: 'invalid_client', error_description: 'Invalid client_id' });
   }
 
-  // Validate redirect URI more flexibly
+  // debugger; // OAUTH SERVER: Parameter Validation - Checking client credentials and redirect URI
+  // We're validating: client_id matches config, redirect_uri is valid format and matches expected pattern
+  // This prevents malicious apps from hijacking the OAuth flow
   if (!redirect_uri || typeof redirect_uri !== 'string') {
     console.log('Invalid redirect URI format:', redirect_uri);
     return res.status(400).json({ error: 'invalid_request', error_description: 'Invalid redirect_uri' });
@@ -59,7 +64,9 @@ router.get('/authorize', (req, res) => {
     return res.status(400).json({ error: 'invalid_request', error_description: 'Invalid redirect_uri' });
   }
 
-  // Render authorization page using EJS template
+  // debugger; // OAUTH SERVER: Consent Page Display - All validation passed, showing user consent form
+  // We're rendering the authorization page where user will grant/deny permission
+  // Page contains: provider info, requested scopes, approve/deny buttons
   res.render('authorize', {
     provider,
     scope,
@@ -73,6 +80,9 @@ router.get('/authorize', (req, res) => {
 
 // Authorization confirmation endpoint
 router.post('/authorize/confirm', (req, res) => {
+  // debugger; // OAUTH SERVER: User Consent - User clicked 'Approve' on consent page
+  // We received: user's decision to grant access, now generating authorization code
+  // Next: Create authorization code and redirect back to main application
   const { response_type, client_id, redirect_uri, scope, state, nonce, provider } = req.body;
 
   console.log('Authorization confirmation request:', {
@@ -106,7 +116,9 @@ router.post('/authorize/confirm', (req, res) => {
   }
 
   try {
-    // Generate authorization code
+    // debugger; // OAUTH SERVER: Authorization Code Generation - Creating short-lived auth code
+    // We're generating: unique authorization code, expiration time (10 minutes)
+    // This code will be exchanged for tokens by the main application
     const code = uuidv4();
     const expiresAt = Date.now() + 600000; // 10 minutes
 
@@ -119,7 +131,9 @@ router.post('/authorize/confirm', (req, res) => {
       nonce,
     });
 
-    // Build redirect URL with parameters
+    // debugger; // OAUTH SERVER: Redirect with Code - Sending user back to main app with authorization code
+    // We're redirecting to: main app's callback URL with code and state parameters
+    // Main app will use this code to request access tokens
     const params = new URLSearchParams();
     params.append('code', code);
     if (state) {

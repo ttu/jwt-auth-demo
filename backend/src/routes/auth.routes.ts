@@ -40,6 +40,9 @@ const users: User[] = [
 
 // Login route
 router.post('/login', async (req: Request, res: Response) => {
+  // debugger; // PASSWORD LOGIN START - User submitted username/password, validating credentials
+  // We're receiving: username, password, deviceId (unique per device), user agent info
+  // Next: Validate credentials against user database (demo users array)
   const { username, password } = req.body;
   const deviceId = req.headers['x-device-id'] as string;
   const userAgent = req.headers['user-agent'] as string;
@@ -63,6 +66,9 @@ router.post('/login', async (req: Request, res: Response) => {
     os: platform,
   };
 
+  // debugger; // CREDENTIAL VALIDATION - Checking username/password against user database
+  // Demo users: username='demo', password='password123'
+  // Next: If valid, generate JWT access and refresh tokens
   const user = users.find(u => u.username === username && u.password === password);
 
   if (!user) {
@@ -71,7 +77,9 @@ router.post('/login', async (req: Request, res: Response) => {
   }
 
   try {
-    // Generate tokens
+    // debugger; // TOKEN GENERATION - Creating JWT access and refresh tokens for authenticated user
+    // Access token: Short-lived (15 seconds for demo), used for API requests
+    // Refresh token: Long-lived (7 days), used to get new access tokens
     const accessToken = createToken(user.id, user.username, settings.jwt.accessSecret, settings.jwt.accessTokenExpiry, [
       'read',
       'write',
@@ -85,7 +93,9 @@ router.post('/login', async (req: Request, res: Response) => {
       ['refresh']
     );
 
-    // Store refresh token in memory with expiration
+    // debugger; // SESSION CREATION - Storing refresh token and setting cookies
+    // We're creating a device-specific session by storing the refresh token
+    // Refresh token goes in HTTP-only cookie for security, access token returned to client
     storeRefreshToken(refreshToken, user.id, deviceId, deviceInfo, settings.jwt.refreshTokenExpiry);
 
     console.log('[Auth route] Login successful:', {
@@ -107,6 +117,9 @@ router.post('/login', async (req: Request, res: Response) => {
 
 // Refresh token route
 router.post('/refresh', verifyRefreshToken, (async (req: RequestWithUser, res: Response) => {
+  // debugger; // TOKEN REFRESH START - Access token expired, using refresh token to get new tokens
+  // Middleware already validated refresh token and populated req.user
+  // Next: Generate new access token and new single-use refresh token
   try {
     const deviceId = req.headers['x-device-id'] as string;
     const deviceInfo: DeviceInfo = {
@@ -115,7 +128,9 @@ router.post('/refresh', verifyRefreshToken, (async (req: RequestWithUser, res: R
       os: (req.headers['sec-ch-ua-platform'] as string) || 'unknown',
     };
 
-    // Generate new access token
+    // debugger; // NEW TOKEN GENERATION - Creating fresh access token and rotating refresh token
+    // Access token: New 15-second token for API requests
+    // Refresh token: New single-use token (old one is now invalid)
     const accessToken = createToken(
       req.user!.userId,
       req.user!.username,
@@ -133,7 +148,9 @@ router.post('/refresh', verifyRefreshToken, (async (req: RequestWithUser, res: R
       ['refresh']
     );
 
-    // Store the new refresh token
+    // debugger; // TOKEN STORAGE - Storing new refresh token and setting cookie
+    // Old refresh token is automatically invalidated (single-use)
+    // New refresh token stored for future refresh attempts
     storeRefreshToken(newRefreshToken, req.user!.userId, deviceId, deviceInfo, settings.jwt.refreshTokenExpiry);
 
     // Set the new refresh token in HTTP-only cookie using helper

@@ -9,6 +9,9 @@ const router = express.Router();
 
 // Token endpoint
 router.post('/token', (req, res) => {
+  // debugger; // OAUTH SERVER: Token Exchange Request - Main app exchanging authorization code for tokens
+  // We received: grant_type, code, redirect_uri, client_id, client_secret, provider
+  // Next: Validate the authorization code and generate access/refresh/ID tokens
   const { grant_type, code, redirect_uri, client_id, client_secret, provider } = req.body as OAuthTokenRequest;
 
   // Validate request
@@ -25,6 +28,9 @@ router.post('/token', (req, res) => {
     return res.status(400).json({ error: 'invalid_client' });
   }
 
+  // debugger; // OAUTH SERVER: Authorization Code Validation - Checking if code is valid and not expired
+  // We're validating: code exists, not expired, matches redirect_uri
+  // This ensures the code wasn't tampered with or used before
   const authCode = getAuthorizationCode(code);
   if (!authCode) {
     return res.status(400).json({ error: 'invalid_grant' });
@@ -39,7 +45,9 @@ router.post('/token', (req, res) => {
     return res.status(400).json({ error: 'invalid_grant', error_description: 'Invalid redirect_uri' });
   }
 
-  // Generate tokens
+  // debugger; // OAUTH SERVER: Token Generation - Creating OAuth tokens for authenticated user
+  // We're generating: access_token (API access), refresh_token (renewal), id_token (identity)
+  // These tokens will be sent back to main application
   const accessToken = jwt.sign({ sub: mockUsers[provider].id, provider }, config.jwtSecret, {
     expiresIn: config.accessTokenExpiry,
   });
@@ -48,7 +56,9 @@ router.post('/token', (req, res) => {
     expiresIn: config.refreshTokenExpiry,
   });
 
-  // Generate ID token with nonce
+  // debugger; // OAUTH SERVER: ID Token Creation - Creating ID token with nonce for security
+  // ID token contains: user identity, nonce (prevents replay attacks), standard OIDC claims
+  // This proves user identity to the main application
   const idToken = jwt.sign(
     {
       iss: 'http://localhost:3002', // Issuer
@@ -62,6 +72,9 @@ router.post('/token', (req, res) => {
     config.jwtSecret
   );
 
+  // debugger; // OAUTH SERVER: Token Response - Sending tokens back to main application
+  // We're sending: access_token, refresh_token, id_token, expires_in, token_type
+  // Main app will use these tokens to authenticate the user
   const response: OAuthTokenResponse = {
     access_token: accessToken,
     token_type: 'Bearer',

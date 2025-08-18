@@ -1,11 +1,10 @@
-# React Node JWT Authentication Demo
+# 🔐 React Node JWT Authentication Demo
 
 A demonstration of JWT-based authentication with React frontend and Node.js backend, featuring secure token management and device-specific sessions.
 
-## Features
+## ✨ Features
 
 - **Multiple Authentication Methods**
-
   - Local password authentication
   - Fake OAuth server for demoing OAuth flows:
     - Google
@@ -14,7 +13,6 @@ A demonstration of JWT-based authentication with React frontend and Node.js back
     - Company
 
 - **Secure Token-Based Authentication**
-
   - JWT-based authentication with access and refresh tokens
   - HTTP-only cookies for refresh tokens (disabled in demo)
   - Device-specific session management
@@ -29,7 +27,6 @@ A demonstration of JWT-based authentication with React frontend and Node.js back
     - `deviceId`: Tracks device-specific tokens
 
 - **Token Management**
-
   - Short-lived access tokens (15 seconds for demo)
   - Long-lived refresh tokens with expiration (7 days)
   - Single-use refresh tokens for enhanced security
@@ -42,29 +39,25 @@ A demonstration of JWT-based authentication with React frontend and Node.js back
     - Ensures smooth user experience without token expiration interruptions
 
 - **Session Management**
-
   - Virtual sessions maintained through a chain of single-use refresh tokens
   - Each session is identified by a device ID and maintained through token rotation
   - Session listing and management through tracking active device IDs
   - Ability to revoke specific device sessions by invalidating all tokens for that device
   - Automatic cleanup of expired tokens
-  - Single-use refresh tokens for enhanced security
 
 - **Security Features**
   - CSRF protection with SameSite cookies
-  - XSS protection with HTTP-only cookies (disabled in demo)
+  - XSS protection with HTTP-only cookies (disabled in demo for easier debugging)
   - Token blacklisting for immediate invalidation
   - Device tracking and management
   - Standard JWT claims for improved security
   - Permission-based token scoping
   - Replay attack prevention through unique token IDs
   - Version control for token format changes
-  - Single-use refresh tokens for enhanced security
 
-## Authentication Flow
+## 🔄 Authentication Flow
 
 1. **Local Password Authentication**
-
    - User provides credentials
    - Client generates unique device ID and includes it in request header:
      ```
@@ -78,7 +71,6 @@ A demonstration of JWT-based authentication with React frontend and Node.js back
    - Each refresh token represents a virtual session for that device
 
 2. **Token Refresh Flow**
-
    - Client detects access token expiration
    - Client sends refresh token in HTTP-only cookie
    - Server validates refresh token:
@@ -94,7 +86,6 @@ A demonstration of JWT-based authentication with React frontend and Node.js back
    - Server returns new access token
 
 3. **OAuth Authentication**
-
    - User clicks provider-specific login button
    - Application generates unique state parameter and nonce
    - User redirected to fake OAuth server's authorization page
@@ -110,7 +101,6 @@ A demonstration of JWT-based authentication with React frontend and Node.js back
    - Access token and ID token returned to client
 
 4. **Access Token Usage**
-
    - Client stores access token in memory (not localStorage)
    - Access token included in Authorization header for all protected API requests:
      ```
@@ -129,21 +119,18 @@ A demonstration of JWT-based authentication with React frontend and Node.js back
    - System tracks device information for each token chain
    - No traditional server-side session storage is used
 
-## OAuth Implementation
+## 🌐 OAuth Implementation
 
 The application implements OAuth 2.0 Authorization Code Flow with OpenID Connect for identity verification.
 
 - **Supported Providers**
-
   - Google
   - Microsoft
   - Strava
   - Custom Company Provider
 
 - **OAuth 2.0 Authorization Code Flow with OpenID Connect**
-
   1. **Authorization Request**
-
      - Client generates:
        - State parameter (CSRF protection)
        - Nonce (replay attack prevention)
@@ -157,7 +144,6 @@ The application implements OAuth 2.0 Authorization Code Flow with OpenID Connect
        - `provider`
 
   2. **Authorization Code Exchange**
-
      - Provider redirects back with:
        - Authorization code
        - State parameter
@@ -167,14 +153,13 @@ The application implements OAuth 2.0 Authorization Code Flow with OpenID Connect
        - Redirect URI
 
   3. **Token Management**
-
-     - Access tokens (1 hour lifetime)
+     - Access tokens (15 seconds for demo)
        - Used for API access
        - Contains minimal claims (sub, provider)
      - Refresh tokens (7 days lifetime)
        - Used for obtaining new access tokens
        - Contains minimal claims (sub, provider)
-     - ID tokens (1 hour lifetime)
+     - ID tokens (15 seconds for demo)
        - Contains identity information
        - Includes nonce for replay attack prevention
        - Standard OpenID Connect claims:
@@ -200,24 +185,21 @@ The application implements OAuth 2.0 Authorization Code Flow with OpenID Connect
   - Provider-specific client validation
   - Automatic cleanup of expired authorization codes
 
-## Security Measures
+## 🛡️ Security Measures
 
 - **Access Tokens**
-
-  - Short-lived (1 hour)
+  - Short-lived (15 seconds for demo)
   - Stored in memory
   - Can be blacklisted if compromised
   - Proactively refreshed to prevent expiration during use
 
 - **Refresh Tokens**
-
   - Long-lived (7 days)
   - Stored in HTTP-only cookies
   - Device-specific
   - Automatically expire
 
 - **ID Tokens**
-
   - Short-lived (1 hour)
   - Contains identity information
   - Includes nonce for replay attack prevention
@@ -229,7 +211,7 @@ The application implements OAuth 2.0 Authorization Code Flow with OpenID Connect
   - SameSite=strict (prevents CSRF)
   - Secure in production
 
-## Authentication Flow Diagrams
+## 📊 Authentication Flow Diagrams
 
 ### Password-Based Authentication Flow
 
@@ -308,7 +290,7 @@ sequenceDiagram
     Server->>Client: Return new access token
 ```
 
-## Getting Started
+## 🚀 Getting Started
 
 1. **Clone the repository**
 
@@ -326,15 +308,34 @@ sequenceDiagram
 
 3. **Set up environment variables**
 
-   The `.env` file is already included in the backend directory with the following configuration:
+   **Backend Configuration** - The `.env` file is already included in the backend directory:
 
    ```env
    PORT=3001
    JWT_ACCESS_SECRET=your_access_secret
    JWT_REFRESH_SECRET=your_refresh_secret
-   ACCESS_TOKEN_EXPIRY=900        # 15 minutes in seconds
+   ACCESS_TOKEN_EXPIRY=15         # 15 seconds for demo
    REFRESH_TOKEN_EXPIRY=604800    # 7 days in seconds
    NODE_ENV=development
+   ```
+
+   **OAuth Server Configuration** - The OAuth server uses default values but supports these environment variables:
+
+   ```env
+   PORT=3002
+   JWT_SECRET=fake-oauth-secret
+   ACCESS_TOKEN_EXPIRY=3600       # 1 hour in seconds
+   REFRESH_TOKEN_EXPIRY=604800    # 7 days in seconds
+
+   # OAuth Provider Configuration (optional - defaults provided)
+   GOOGLE_CLIENT_ID=fake-google-client-id
+   GOOGLE_CLIENT_SECRET=fake-google-client-secret
+   MICROSOFT_CLIENT_ID=fake-microsoft-client-id
+   MICROSOFT_CLIENT_SECRET=fake-microsoft-client-secret
+   STRAVA_CLIENT_ID=fake-strava-client-id
+   STRAVA_CLIENT_SECRET=fake-strava-client-secret
+   COMPANY_CLIENT_ID=fake-company-client-id
+   COMPANY_CLIENT_SECRET=fake-company-client-secret
    ```
 
 4. **Start the development servers**
@@ -347,14 +348,17 @@ sequenceDiagram
    ```
 
 5. **Access the application**
-
    - Frontend: http://localhost:5173
    - Backend API: http://localhost:3001/api
    - OAuth Server: http://localhost:3002
 
 6. **Test the authentication**
 
-   - Try logging in with email/password
+   **Default Demo Credentials:**
+   - Username: `demo`
+   - Password: `password123`
+
+   - Try logging in with the demo credentials above
    - Verify token refresh functionality
    - Check session management features
 
@@ -372,11 +376,11 @@ sequenceDiagram
    - Verify OAuth token refresh functionality
    - Check OAuth session management
 
-## Debugging with VS Code
+## Debugging
 
-This project includes pre-configured VS Code debugging settings for both frontend and backend services. The configuration supports debugging the full stack or individual services.
+For comprehensive debugging information including VS Code configurations and educational debugging with breakpoints, see the [Debugging Guide](DEBUGGING.md).
 
-## API Endpoints
+## 📡 API Endpoints
 
 ### Authentication
 
@@ -384,6 +388,11 @@ This project includes pre-configured VS Code debugging settings for both fronten
 - `POST /api/auth/refresh` - Refresh access token
 - `POST /api/auth/logout` - Logout user
 - `POST /api/auth/invalidate-token` - Invalidate current access token
+
+### OAuth Authentication
+
+- `GET /api/auth/oauth/:provider` - Start OAuth flow (provider: google, microsoft, strava, company)
+- `GET /api/auth/callback/:provider` - OAuth callback handler
 
 ### Session Management
 
@@ -393,8 +402,34 @@ This project includes pre-configured VS Code debugging settings for both fronten
 ### Users
 
 - `GET /api/users/list` - Get list of users (protected)
+- `GET /api/users/profile` - Get current user profile (protected)
 
-## Project Structure
+## 🔗 OAuth Server API Endpoints
+
+The fake OAuth server (runs on port 3002) provides the following endpoints:
+
+### Authorization
+
+- `GET /oauth/authorize` - OAuth authorization endpoint
+  - Parameters: `response_type`, `client_id`, `redirect_uri`, `scope`, `state`, `nonce`, `provider`
+  - Returns: Authorization page or redirects with authorization code
+- `POST /oauth/authorize/confirm` - Confirm authorization
+  - Body: Same parameters as above
+  - Returns: Redirect to callback URL with authorization code
+
+### Token Management
+
+- `POST /oauth/token` - Exchange authorization code for tokens
+  - Body: `grant_type`, `code`, `redirect_uri`, `client_id`, `client_secret`, `provider`
+  - Returns: `access_token`, `refresh_token`, `id_token`, `token_type`, `expires_in`
+
+### User Information
+
+- `GET /oauth/userinfo` - Get user information
+  - Headers: `Authorization: Bearer <access_token>`
+  - Returns: User profile information based on provider
+
+## 📁 Project Structure
 
 ```
 .

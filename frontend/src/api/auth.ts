@@ -4,9 +4,15 @@ import api from './config';
 api.interceptors.response.use(
   response => response,
   async error => {
+    // debugger; // API ERROR INTERCEPTOR - HTTP request failed, checking if it's auth-related
+    // This interceptor catches all API errors, especially 401 (unauthorized)
+    // We handle token expiration here, but this app uses proactive refresh instead
     const originalRequest = error.config;
 
     if (error.response?.status === 401 && !originalRequest._retry) {
+      // debugger; // 401 UNAUTHORIZED - Access token expired or invalid
+      // Token is expired/invalid, but this app uses background refresh
+      // In other implementations, this is where you'd attempt token refresh
       // In interceptor if we don't have refresh mechanism, we should just redirect to login
       // If we have refresh mechanism, we should try to refresh the token
       // In this app we have background refresh handling, so we don't need to do anything
@@ -29,11 +35,15 @@ api.interceptors.response.use(
 );
 
 export const login = async (username: string, password: string) => {
+  // debugger; // LOGIN API CALL - Sending credentials to backend for authentication
+  // We're posting username/password to /auth/login with device ID in headers
   const response = await api.post('/auth/login', { username, password });
   return response.data;
 };
 
 export const logout = async () => {
+  // debugger; // LOGOUT API CALL - Notifying backend to invalidate refresh token
+  // This will revoke the refresh token on the backend
   await api.post('/auth/logout');
 };
 
