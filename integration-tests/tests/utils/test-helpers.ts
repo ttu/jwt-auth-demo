@@ -161,4 +161,88 @@ export class TestHelpers {
   async takeScreenshot(name: string): Promise<void> {
     await this.page.screenshot({ path: `test-results/${name}.png`, fullPage: true });
   }
+
+  /**
+   * Perform password-based login
+   */
+  async passwordLogin(username: string = 'demo', password: string = 'password123'): Promise<void> {
+    // Navigate to login page
+    await this.navigateToLogin();
+
+    // Fill in credentials
+    await this.page.fill('input[name="username"]', username);
+    await this.page.fill('input[name="password"]', password);
+
+    // Submit form
+    await this.page.click('button[type="submit"]');
+
+    // Wait for successful login (redirect away from login page)
+    await expect(this.page).not.toHaveURL('/login');
+  }
+
+  /**
+   * Invalidate the current access token via backend API
+   */
+  async invalidateToken(): Promise<void> {
+    // Get access token from localStorage (correct key is 'access_token')
+    const accessToken = await this.page.evaluate(() => {
+      return localStorage.getItem('access_token');
+    });
+
+    if (!accessToken) {
+      throw new Error('No access token found in localStorage');
+    }
+
+    // Get device ID from localStorage
+    const deviceId = await this.page.evaluate(() => {
+      return localStorage.getItem('deviceId');
+    });
+
+    if (!deviceId) {
+      throw new Error('No device ID found in localStorage');
+    }
+
+    // Call backend to invalidate token
+    try {
+      await axios.post(
+        'http://localhost:3001/api/auth/invalidate-token',
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'x-device-id': deviceId,
+            'Content-Type': 'application/json',
+          },
+          withCredentials: true,
+        }
+      );
+    } catch (error) {
+      console.error('Failed to invalidate token:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Verify that access to a protected route is denied (should redirect to login or show error)
+   */
+  async verifyAccessDenied(protectedRoute: string = '/users'): Promise<void> {
+    // Try to access the protected route
+    await this.page.goto(protectedRoute);
+
+    // Wait a moment for any API calls to complete
+    await this.page.waitForTimeout(2000);
+
+    // Check if we're redirected to login OR if we see an authentication error
+    const currentUrl = this.page.url();
+    const pageContent = await this.page.textContent('body');
+
+    if (currentUrl.includes('/login')) {
+      // Redirected to login page - this is the expected behavior
+      await expect(this.page.locator('h2')).toContainText('Sign in to your account');
+    } else {
+      // Still on the protected route but should show an error indicating failed authentication
+      // This happens when the frontend doesn't properly handle 401 errors
+      expect(pageContent).toMatch(/failed to fetch|unauthorized|invalid token|error/i);
+    }
+  }
 }

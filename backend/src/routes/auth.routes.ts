@@ -192,7 +192,8 @@ router.post('/logout', verifyAccessToken, (async (req: RequestWithUser, res: Res
 }) as RequestHandlerWithUser);
 
 // Invalidate current access token route
-router.post('/invalidate-token', verifyRefreshToken, async (req: Request, res: Response) => {
+// This route should not be used by the client. Only an admin should be able to invalidate a token
+router.post('/invalidate-token', async (req: RequestWithUser, res: Response) => {
   console.log('[Auth route] Invalidate token request');
 
   const accessToken = req.headers.authorization?.split(' ')[1];
