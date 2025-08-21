@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import { verifyAccessToken, verifyRefreshToken } from '../middleware/auth.middleware';
 import { storeRefreshToken, revokeDeviceRefreshTokens } from '../stores/refreshToken.store';
 import { blacklistAccessToken } from '../stores/tokenBlacklist.store';
-import { DeviceInfo, User, RequestWithUser, RequestHandlerWithUser } from '../types/index';
+import { DeviceInfo, JwtPayload, User, RequestWithUser, RequestHandlerWithUser } from '../types/index';
 import { settings } from '../config/settings';
 import { v4 as uuidv4 } from 'uuid';
 import { setRefreshTokenCookie } from '../utils/cookie.utils';
@@ -166,7 +166,6 @@ router.post('/refresh', verifyRefreshToken, (async (req: RequestWithUser, res: R
 // Logout route
 router.post('/logout', verifyAccessToken, (async (req: RequestWithUser, res: Response) => {
   const deviceId = req.headers['x-device-id'] as string;
-  const accessToken = req.headers.authorization?.split(' ')[1];
 
   console.log('[Auth route] Logout request:', { deviceId, userId: req.user?.userId });
 
@@ -180,9 +179,9 @@ router.post('/logout', verifyAccessToken, (async (req: RequestWithUser, res: Res
   }
 
   // Blacklist the current access token
-  if (accessToken) {
+  if (req.user) {
     console.log('[Auth route] Blacklisting access token');
-    blacklistAccessToken(accessToken);
+    blacklistAccessToken(req.user.jti);
   }
 
   // Always clear the refresh token cookie
@@ -196,15 +195,23 @@ router.post('/logout', verifyAccessToken, (async (req: RequestWithUser, res: Res
 router.post('/invalidate-token', async (req: RequestWithUser, res: Response) => {
   console.log('[Auth route] Invalidate token request');
 
-  const accessToken = req.headers.authorization?.split(' ')[1];
+  const authHeader = req.headers.authorization;
 
-  if (!accessToken) {
-    console.error('[Auth route] Invalidate token failed: No access token provided');
-    return res.status(400).json({ message: 'No access token provided' });
+  if (!authHeader) {
+    return res.status(401).json({ message: 'No token provided' });
+  }
+
+  const token = authHeader.split(' ')[1];
+
+  const decoded = jwt.verify(token, settings.jwt.accessSecret) as JwtPayload;
+
+  if (!decoded) {
+    console.error('[Auth route] Invalidate token failed: Invalid access token');
+    return res.status(400).json({ message: 'Invalid access token' });
   }
 
   try {
-    blacklistAccessToken(accessToken);
+    blacklistAccessToken(decoded.jti);
     console.log('[Auth route] Token invalidated successfully');
     res.json({ message: 'Token invalidated successfully' });
   } catch (error) {

@@ -17,18 +17,19 @@ export const verifyAccessToken = (req: RequestWithUser, res: Response, next: Nex
 
   const token = authHeader.split(' ')[1];
 
-  // debugger; // BLACKLIST CHECK - Verifying token hasn't been manually revoked/invalidated
-  // Blacklisted tokens are immediately invalid even if signature is valid
-  // This prevents use of tokens after logout or manual invalidation
-  if (isAccessTokenBlacklisted(token)) {
-    return res.status(401).json({ message: 'Token has been revoked' });
-  }
-
   try {
     // debugger; // JWT SIGNATURE VERIFICATION - Validating token signature and extracting user info
     // If successful: req.user populated with userId, username, scope, etc.
     // If failed: Token is invalid/expired, user must refresh or re-login
     const decoded = jwt.verify(token, settings.jwt.accessSecret) as JwtPayload;
+
+    // debugger; // BLACKLIST CHECK - Verifying token hasn't been manually revoked/invalidated
+    // Blacklisted tokens are immediately invalid even if signature is valid
+    // This prevents use of tokens after logout or manual invalidation
+    if (isAccessTokenBlacklisted(decoded.jti)) {
+      return res.status(401).json({ message: 'Token has been revoked' });
+    }
+
     req.user = decoded;
     next();
   } catch (error) {

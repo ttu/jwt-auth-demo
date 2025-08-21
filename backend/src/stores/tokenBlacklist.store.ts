@@ -1,14 +1,18 @@
-// In-memory store for blacklisted access tokens
+import crypto from 'crypto';
+
+// In-memory store for blacklisted access tokens. Hashed jti (JWT ID)
 const blacklistedTokens = new Set<string>();
 
 // Add an access token to the blacklist
-export const blacklistAccessToken = (token: string): void => {
-  blacklistedTokens.add(token);
+export const blacklistAccessToken = (jti: string): void => {
+  const hashedJti = crypto.createHash('sha256').update(jti).digest('hex');
+  blacklistedTokens.add(hashedJti);
 };
 
 // Check if an access token is blacklisted
-export const isAccessTokenBlacklisted = (token: string): boolean => {
-  return blacklistedTokens.has(token);
+export const isAccessTokenBlacklisted = (jti: string): boolean => {
+  const hashedJti = crypto.createHash('sha256').update(jti).digest('hex');
+  return blacklistedTokens.has(hashedJti);
 };
 
 // Clean up blacklisted tokens (optional, can be called periodically)
