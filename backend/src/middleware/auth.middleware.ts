@@ -4,6 +4,7 @@ import { findRefreshToken, markRefreshTokenAsUsed } from '../stores/refreshToken
 import { isAccessTokenBlacklisted } from '../stores/tokenBlacklist.store';
 import { JwtPayload, RequestWithUser } from '../types/index';
 import { settings } from '../config/settings';
+import { commonVerifyOptions } from '../utils/token.utils';
 
 export const verifyAccessToken = (req: RequestWithUser, res: Response, next: NextFunction) => {
   // debugger; // ACCESS TOKEN VALIDATION - Checking if user has valid access token for protected routes
@@ -21,7 +22,7 @@ export const verifyAccessToken = (req: RequestWithUser, res: Response, next: Nex
     // debugger; // JWT SIGNATURE VERIFICATION - Validating token signature and extracting user info
     // If successful: req.user populated with userId, username, scope, etc.
     // If failed: Token is invalid/expired, user must refresh or re-login
-    const decoded = jwt.verify(token, settings.jwt.accessSecret) as JwtPayload;
+    const decoded = jwt.verify(token, settings.jwt.accessSecret, commonVerifyOptions) as JwtPayload;
 
     // debugger; // BLACKLIST CHECK - Verifying token hasn't been manually revoked/invalidated
     // Blacklisted tokens are immediately invalid even if signature is valid
@@ -57,7 +58,7 @@ export const verifyRefreshToken = async (req: RequestWithUser, res: Response, ne
   try {
     // debugger; // REFRESH TOKEN SIGNATURE CHECK - Verifying JWT signature and extracting claims
     // First validation: Is the token structurally valid and properly signed?
-    const decoded = jwt.verify(refreshToken, settings.jwt.refreshSecret) as JwtPayload;
+    const decoded = jwt.verify(refreshToken, settings.jwt.refreshSecret, commonVerifyOptions) as JwtPayload;
 
     // Ensure userId is a number
     const userId = typeof decoded.userId === 'string' ? parseInt(decoded.userId, 10) : decoded.userId;

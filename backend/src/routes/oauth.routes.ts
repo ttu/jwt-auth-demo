@@ -6,6 +6,7 @@ import { settings } from '../config/settings';
 import { encodeState, decodeState } from '../utils/oauth.utils';
 import { generateNonce, validateNonce, cleanupNonces } from '../stores/nonce.store';
 import { setRefreshTokenCookie } from '../utils/cookie.utils';
+import { createToken } from '../utils/token.utils';
 
 type TokenResponse = {
   access_token: string;
@@ -190,13 +191,21 @@ router.get('/callback/:provider', async (req: RequestWithUser, res) => {
 
     // Generate application tokens
     const userId = parseInt(userInfo.id.split('-')[1], 10); // Extract the numeric part from the ID
-    const accessToken = jwt.sign({ userId, email: userInfo.email }, settings.jwt.accessSecret, {
-      expiresIn: settings.jwt.accessTokenExpiry,
-    });
+    const accessToken = createToken(
+      userId,
+      userInfo.email, // Use email as username for OAuth users
+      settings.jwt.accessSecret,
+      settings.jwt.accessTokenExpiry,
+      ['read', 'write']
+    );
 
-    const refreshToken = jwt.sign({ userId, email: userInfo.email }, settings.jwt.refreshSecret, {
-      expiresIn: settings.jwt.refreshTokenExpiry,
-    });
+    const refreshToken = createToken(
+      userId,
+      userInfo.email, // Use email as username for OAuth users
+      settings.jwt.refreshSecret,
+      settings.jwt.refreshTokenExpiry,
+      ['refresh']
+    );
 
     // Store refresh token
     const deviceInfo: DeviceInfo = {

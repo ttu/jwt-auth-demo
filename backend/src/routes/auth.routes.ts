@@ -5,29 +5,10 @@ import { storeRefreshToken, revokeDeviceRefreshTokens } from '../stores/refreshT
 import { blacklistAccessToken } from '../stores/tokenBlacklist.store';
 import { DeviceInfo, JwtPayload, User, RequestWithUser, RequestHandlerWithUser } from '../types/index';
 import { settings } from '../config/settings';
-import { v4 as uuidv4 } from 'uuid';
 import { setRefreshTokenCookie } from '../utils/cookie.utils';
+import { createToken, commonVerifyOptions } from '../utils/token.utils';
 
 const router = Router();
-
-// Helper function to create JWT tokens
-const createToken = (userId: number, username: string, secret: string, expiresIn: number, scope: string[]): string => {
-  return jwt.sign(
-    {
-      iss: 'your-app-name', // Your application name
-      sub: userId.toString(), // Subject (user ID)
-      aud: ['api'], // Audience (which services can use this token)
-      jti: uuidv4(), // Unique token ID
-      userId,
-      username,
-      scope,
-      version: '1.0', // Token version
-      iat: Math.floor(Date.now() / 1000), // Add issued at timestamp
-    },
-    secret,
-    { expiresIn }
-  );
-};
 
 // Dummy user data (in a real app, this would be in a database)
 const users: User[] = [
@@ -203,7 +184,7 @@ router.post('/invalidate-token', async (req: RequestWithUser, res: Response) => 
 
   const token = authHeader.split(' ')[1];
 
-  const decoded = jwt.verify(token, settings.jwt.accessSecret) as JwtPayload;
+  const decoded = jwt.verify(token, settings.jwt.accessSecret, commonVerifyOptions) as JwtPayload;
 
   if (!decoded) {
     console.error('[Auth route] Invalidate token failed: Invalid access token');

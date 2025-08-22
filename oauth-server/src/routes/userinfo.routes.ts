@@ -19,9 +19,14 @@ router.get('/userinfo', (req, res) => {
   const token = authHeader.split(' ')[1];
   try {
     // debugger; // OAUTH SERVER: Token Validation - Verifying access token and extracting user info
-    // We're validating: JWT signature, expiration, extracting provider and user ID
+    // We're validating: JWT signature, expiration, audience, extracting provider and user ID
     // Next: Return mock user profile data for this provider
-    const decoded = jwt.verify(token, config.jwtSecret) as { sub: string; provider: OAuthProvider };
+    const verifyOptions: jwt.VerifyOptions = {
+      algorithms: ['HS256'],
+      issuer: 'your-oauth-server-name',
+      audience: ['idp'],
+    };
+    const decoded = jwt.verify(token, config.jwtSecret, verifyOptions) as { sub: string; provider: OAuthProvider };
     const user = mockUsers[decoded.provider];
     res.json(user);
   } catch (error) {

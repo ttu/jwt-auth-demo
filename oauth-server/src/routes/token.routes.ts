@@ -48,22 +48,42 @@ router.post('/token', (req, res) => {
   // debugger; // OAUTH SERVER: Token Generation - Creating OAuth tokens for authenticated user
   // We're generating: access_token (API access), refresh_token (renewal), id_token (identity)
   // These tokens will be sent back to main application
-  const accessToken = jwt.sign({ sub: mockUsers[provider].id, provider }, config.jwtSecret, {
-    expiresIn: config.accessTokenExpiry,
-  });
+  const accessToken = jwt.sign(
+    {
+      iss: 'your-oauth-server-name',
+      sub: mockUsers[provider].id,
+      provider,
+      aud: ['idp'],
+      iat: Math.floor(Date.now() / 1000),
+    },
+    config.jwtSecret,
+    {
+      expiresIn: config.accessTokenExpiry,
+    }
+  );
 
-  const refreshToken = jwt.sign({ sub: mockUsers[provider].id, provider }, config.jwtSecret, {
-    expiresIn: config.refreshTokenExpiry,
-  });
+  const refreshToken = jwt.sign(
+    {
+      iss: 'your-oauth-server-name',
+      sub: mockUsers[provider].id,
+      provider,
+      aud: ['idp'],
+      iat: Math.floor(Date.now() / 1000), // Issi
+    },
+    config.jwtSecret,
+    {
+      expiresIn: config.refreshTokenExpiry,
+    }
+  );
 
   // debugger; // OAUTH SERVER: ID Token Creation - Creating ID token with nonce for security
   // ID token contains: user identity, nonce (prevents replay attacks), standard OIDC claims
   // This proves user identity to the main application
   const idToken = jwt.sign(
     {
-      iss: 'http://localhost:3002', // Issuer
+      iss: 'your-oauth-server-name', // Issuer
       sub: mockUsers[provider].id, // Subject
-      aud: client_id, // Audience
+      aud: ['idp'], // Audience
       exp: Math.floor(Date.now() / 1000) + config.accessTokenExpiry, // Expiration time
       iat: Math.floor(Date.now() / 1000), // Issued at
       nonce: authCode.nonce, // Nonce for replay attack prevention
