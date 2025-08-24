@@ -12,6 +12,7 @@ export const setRefreshTokenCookie = (res: Response, refreshToken: string): void
     secure: settings.server.nodeEnv === 'production',
     sameSite: 'strict',
     // Only sent with requests to the refresh endpoint. The client could also decide when to send the refresh token to the backend, but this keeps control with the backend
+    // NOTE: In order for debug view to access the refresh token, comment out the path line below
     path: '/api/auth/refresh',
     maxAge: settings.jwt.refreshTokenExpiry * 1000, // Convert to milliseconds
   });

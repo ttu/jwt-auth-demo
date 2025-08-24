@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
 import { getActiveSessions, revokeSession } from '../api/sessions';
 import { getDeviceId } from '../utils/device';
 
