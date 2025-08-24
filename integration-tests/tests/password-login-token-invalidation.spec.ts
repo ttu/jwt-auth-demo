@@ -28,17 +28,17 @@ test.describe('Password Login with Token Invalidation', () => {
       await helpers.takeScreenshot('03-authenticated-state');
     });
 
-    // Step 4: Navigate to users page and verify access
-    await test.step('Navigate to users page and verify access', async () => {
-      await helpers.navigateToUsers();
+    // Step 4: Navigate to customers page and verify access
+    await test.step('Navigate to customers page and verify access', async () => {
+      await helpers.navigateToCustomers();
 
-      // Verify we can see the users page content
-      await expect(page.locator('h1, h2')).toContainText(/users/i);
+      // Verify we can see the customers page content
+      await expect(page.locator('h1, h2')).toContainText(/customers/i);
 
       // Verify we're not redirected to login
       await expect(page).not.toHaveURL('/login');
 
-      await helpers.takeScreenshot('04-users-page-accessible');
+      await helpers.takeScreenshot('04-customers-page-accessible');
     });
 
     // Step 5: Invalidate the token via backend API
@@ -47,14 +47,14 @@ test.describe('Password Login with Token Invalidation', () => {
       await helpers.takeScreenshot('05-token-invalidated');
     });
 
-    // Step 6: Attempt to access users page again - should be denied
-    await test.step('Verify access to users page is now denied', async () => {
-      await helpers.verifyAccessDenied('/users');
+    // Step 6: Attempt to access customers page again - should be denied
+    await test.step('Verify access to customers page is now denied', async () => {
+      await helpers.verifyAccessDenied('/customers');
       await helpers.takeScreenshot('06-access-denied');
 
-      // Additional verification: check that we can't see the user list
-      const userListVisible = await page.locator('ul li').count();
-      expect(userListVisible).toBe(0); // Should not see any users in the list
+      // Additional verification: check that we can't see the customer list
+      const customerListVisible = await page.locator('ul li').count();
+      expect(customerListVisible).toBe(0); // Should not see any customers in the list
     });
 
     // Step 7: Verify that other protected routes are also denied
@@ -67,10 +67,10 @@ test.describe('Password Login with Token Invalidation', () => {
   test('token invalidation persists across page refreshes', async ({ page }) => {
     const helpers = new TestHelpers(page);
 
-    await test.step('Login and access users page', async () => {
+    await test.step('Login and access customers page', async () => {
       await helpers.passwordLogin();
-      await helpers.navigateToUsers();
-      await expect(page.locator('h1, h2')).toContainText(/users/i);
+      await helpers.navigateToCustomers();
+      await expect(page.locator('h1, h2')).toContainText(/customers/i);
     });
 
     await test.step('Invalidate token', async () => {
@@ -83,15 +83,15 @@ test.describe('Password Login with Token Invalidation', () => {
       // Wait for page to load and API calls to complete
       await page.waitForTimeout(2000);
 
-      // Should still be on users page but showing error
-      await expect(page).toHaveURL('/users');
+      // Should still be on customers page but showing error
+      await expect(page).toHaveURL('/customers');
 
-      // Should see "Failed to fetch users" error message
-      await expect(page.locator('body')).toContainText('Failed to fetch users');
+      // Should see "Failed to fetch customers" error message
+      await expect(page.locator('body')).toContainText('Failed to fetch customers');
 
-      // Should not see any user data
-      const userListVisible = await page.locator('ul li').count();
-      expect(userListVisible).toBe(0);
+      // Should not see any customer data
+      const customerListVisible = await page.locator('ul li').count();
+      expect(customerListVisible).toBe(0);
     });
   });
 
@@ -100,10 +100,10 @@ test.describe('Password Login with Token Invalidation', () => {
 
     await test.step('Login and verify API access works', async () => {
       await helpers.passwordLogin();
-      await helpers.navigateToUsers();
+      await helpers.navigateToCustomers();
 
-      // Verify users page loads (which makes API calls)
-      await expect(page.locator('h1, h2')).toContainText(/users/i);
+      // Verify customers page loads (which makes API calls)
+      await expect(page.locator('h1, h2')).toContainText(/customers/i);
     });
 
     await test.step('Invalidate token', async () => {
@@ -114,7 +114,7 @@ test.describe('Password Login with Token Invalidation', () => {
       // Navigate to sessions page which makes API calls
       await page.goto('/sessions');
 
-      // Should see "Failed to fetch users" error message
+      // Should see "Failed to fetch sessions" error message
       await expect(page.locator('body')).toContainText('Failed to fetch sessions');
     });
   });

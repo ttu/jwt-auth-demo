@@ -7,7 +7,7 @@ test.describe('OAuth Authentication Flow', () => {
     await TestHelpers.waitForServices();
   });
 
-  test('complete Google OAuth flow: login → users → sessions → logout', async ({ page }) => {
+  test('complete Google OAuth flow: login → customers → sessions → logout', async ({ page }) => {
     const helpers = new TestHelpers(page);
 
     // Step 1: Navigate to login page
@@ -45,10 +45,10 @@ test.describe('OAuth Authentication Flow', () => {
       await helpers.verifyAuthenticated();
     });
 
-    // Step 7: Navigate to users page
-    await test.step('Navigate to users page', async () => {
-      await helpers.navigateToUsers();
-      await helpers.takeScreenshot('05-users-page');
+    // Step 7: Navigate to customers page
+    await test.step('Navigate to customers page', async () => {
+      await helpers.navigateToCustomers();
+      await helpers.takeScreenshot('05-customers-page');
     });
 
     // Step 8: Navigate to sessions page

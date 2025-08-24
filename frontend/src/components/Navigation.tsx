@@ -11,14 +11,14 @@ const Navigation: React.FC = () => {
           <div className="flex">
             <div className="flex space-x-8">
               <Link
-                to="/users"
+                to="/customers"
                 className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                  location.pathname === '/users'
+                  location.pathname === '/customers'
                     ? 'border-indigo-500 text-gray-900'
                     : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
                 }`}
               >
-                Users
+                Customers
               </Link>
               <Link
                 to="/sessions"

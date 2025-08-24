@@ -82,7 +82,7 @@ export class TestHelpers {
       // Direct redirect to frontend callback
       this.page.waitForURL('**/auth/callback**', { timeout: 10000 }),
       // Direct redirect to authenticated area
-      this.page.waitForURL(url => url.pathname === '/users' || url.pathname === '/' || url.pathname === '/sessions', {
+      this.page.waitForURL(url => url.pathname === '/customers' || url.pathname === '/' || url.pathname === '/sessions', {
         timeout: 10000,
       }),
       // Redirect back to login with error
@@ -93,7 +93,7 @@ export class TestHelpers {
     if (this.page.url().includes('/auth/callback')) {
       await this.page.waitForURL(
         url =>
-          url.pathname === '/users' ||
+          url.pathname === '/customers' ||
           url.pathname === '/' ||
           url.pathname === '/sessions' ||
           url.pathname === '/login',
@@ -103,11 +103,11 @@ export class TestHelpers {
   }
 
   /**
-   * Navigate to users page and verify access
+   * Navigate to customers page and verify access
    */
-  async navigateToUsers(): Promise<void> {
-    await this.page.goto('/users');
-    await expect(this.page.locator('h1, h2')).toContainText(/users/i);
+  async navigateToCustomers(): Promise<void> {
+    await this.page.goto('/customers');
+    await expect(this.page.locator('h1, h2')).toContainText(/customers/i);
   }
 
   /**
@@ -122,10 +122,10 @@ export class TestHelpers {
    * Logout from the application
    */
   async logout(): Promise<void> {
-    // Navigate to users page where the logout button is located
-    await this.page.goto('/users');
+    // Navigate to customers page where the logout button is located
+    await this.page.goto('/customers');
 
-    // Look for logout button on the users page
+    // Look for logout button on the customers page
     const logoutButton = this.page.locator('button').filter({ hasText: /logout|sign out/i });
     await expect(logoutButton).toBeVisible();
     await logoutButton.click();
@@ -140,7 +140,7 @@ export class TestHelpers {
    */
   async verifyAuthenticated(): Promise<void> {
     // Try to access a protected route
-    await this.page.goto('/users');
+    await this.page.goto('/customers');
     // Should not be redirected to login
     await expect(this.page).not.toHaveURL('/login');
   }
@@ -150,7 +150,7 @@ export class TestHelpers {
    */
   async verifyNotAuthenticated(): Promise<void> {
     // Try to access a protected route
-    await this.page.goto('/users');
+    await this.page.goto('/customers');
     // Should be redirected to login
     await expect(this.page).toHaveURL('/login');
   }
@@ -225,7 +225,7 @@ export class TestHelpers {
   /**
    * Verify that access to a protected route is denied (should redirect to login or show error)
    */
-  async verifyAccessDenied(protectedRoute: string = '/users'): Promise<void> {
+  async verifyAccessDenied(protectedRoute: string = '/customers'): Promise<void> {
     // Try to access the protected route
     await this.page.goto(protectedRoute);
 

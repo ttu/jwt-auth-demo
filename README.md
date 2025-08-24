@@ -399,9 +399,12 @@ For comprehensive debugging information including VS Code configurations and edu
 - `GET /api/sessions` - Get active sessions
 - `POST /api/sessions/revoke` - Revoke specific session
 
+### Customers
+
+- `GET /api/customers/list` - Get list of customers (protected)
+
 ### Users
 
-- `GET /api/users/list` - Get list of users (protected)
 - `GET /api/users/profile` - Get current user profile (protected)
 
 ## 🔗 OAuth Server API Endpoints

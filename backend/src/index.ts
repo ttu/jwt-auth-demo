@@ -5,6 +5,7 @@ import morgan from 'morgan';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth.routes';
 import oauthRoutes from './routes/oauth.routes';
+import customerRoutes from './routes/customer.routes';
 import userRoutes from './routes/user.routes';
 import sessionRoutes from './routes/session.routes';
 import { settings } from './config/settings';
@@ -44,6 +45,7 @@ app.get('/api/health', (req, res) => {
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/auth', oauthRoutes);
+app.use('/api/customers', customerRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/sessions', sessionRoutes);
 

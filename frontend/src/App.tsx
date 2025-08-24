@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './components/Login';
-import Users from './components/Users';
+import Customers from './components/Customers';
 import Sessions from './components/Sessions';
 import Navigation from './components/Navigation';
 import OAuthCallback from './components/OAuthCallback';
@@ -22,7 +22,7 @@ const LoadingSpinner: React.FC = () => (
 const AuthRoute: React.FC<RouteProps & { isPrivate?: boolean }> = ({
   children,
   isPrivate = false,
-  redirectTo = isPrivate ? '/login' : '/users',
+  redirectTo = isPrivate ? '/login' : '/customers',
 }) => {
   const { isAuthenticated, isLoading } = useAuth();
 
@@ -58,11 +58,11 @@ const App: React.FC = () => {
             }
           />
           <Route
-            path="/users"
+            path="/customers"
             element={
               <AuthRoute isPrivate>
                 <Layout>
-                  <Users />
+                  <Customers />
                 </Layout>
               </AuthRoute>
             }
