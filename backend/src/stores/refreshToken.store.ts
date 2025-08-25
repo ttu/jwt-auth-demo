@@ -66,6 +66,7 @@ export const revokeRefreshToken = (token: string): void => {
 
 // Revoke all refresh tokens for a device
 export const revokeDeviceRefreshTokens = (deviceId: string): void => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   for (const [token, data] of refreshTokens.entries()) {
     if (data.deviceId === deviceId && !data.isRevoked) {
       data.isRevoked = true;
@@ -84,6 +85,7 @@ export const getUserSessions = (
   isRevoked: boolean;
 }> => {
   const sessions = [];
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   for (const [token, data] of refreshTokens.entries()) {
     if (data.userId === userId && new Date() < data.expiresAt && !data.isRevoked && !data.isUsed) {
       sessions.push({

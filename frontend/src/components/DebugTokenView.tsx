@@ -5,6 +5,7 @@ import jwt_decode from 'jwt-decode';
 type DecodedToken = {
   exp: number;
   iat: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 };
 

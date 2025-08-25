@@ -59,6 +59,7 @@ export type OAuthErrorResponse = {
 };
 
 // TODO: Can this be removed?
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export type RequestHandlerWithUser = RequestHandler<
   any,
   any,
@@ -66,6 +67,7 @@ export type RequestHandlerWithUser = RequestHandler<
   any,
   { user?: JwtPayload; session?: { oauthState?: string } }
 >;
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
 export type OAuthState = {
   deviceId: string;

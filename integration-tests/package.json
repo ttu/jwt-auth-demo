@@ -10,7 +10,10 @@
     "test:headed": "playwright test --headed",
     "install-deps": "npx playwright install",
     "format": "prettier --write \"tests/**/*.{ts,js,json}\"",
-    "format:check": "prettier --check \"tests/**/*.{ts,js,json}\""
+    "format:check": "prettier --check \"tests/**/*.{ts,js,json}\"",
+    "lint": "eslint --config .eslintrc.cjs \"tests/**/*.{ts,js}\"",
+    "lint:check": "eslint --config .eslintrc.cjs \"tests/**/*.{ts,js}\"",
+    "lint:fix": "eslint --config .eslintrc.cjs \"tests/**/*.{ts,js}\" --fix"
   },
   "dependencies": {
     "@playwright/test": "^1.40.0",
@@ -18,6 +21,9 @@
   },
   "devDependencies": {
     "@types/node": "^20.10.5",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.50.0",
     "prettier": "^3.0.0"
   }
 }

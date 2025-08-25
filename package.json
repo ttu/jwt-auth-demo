@@ -26,10 +26,24 @@
     "format:frontend": "prettier --write \"frontend/src/**/*.{ts,tsx,js,jsx,json,css}\"",
     "format:oauth": "prettier --write \"oauth-server/src/**/*.{ts,js,json,ejs}\"",
     "format:tests": "prettier --write \"integration-tests/tests/**/*.{ts,js,json}\"",
-    "format:all": "npm run format:backend && npm run format:frontend && npm run format:oauth && npm run format:tests"
+    "format:all": "npm run format:backend && npm run format:frontend && npm run format:oauth && npm run format:tests",
+    "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
+    "lint:check": "eslint . --ext .ts,.tsx,.js,.jsx",
+    "lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",
+    "lint:backend": "eslint --config backend/.eslintrc.js \"backend/src/**/*.{ts,js}\"",
+    "lint:frontend": "eslint --config frontend/.eslintrc.cjs \"frontend/src/**/*.{ts,tsx,js,jsx}\"",
+    "lint:oauth": "eslint --config oauth-server/.eslintrc.js \"oauth-server/src/**/*.{ts,js}\"",
+    "lint:tests": "eslint --config integration-tests/.eslintrc.cjs \"integration-tests/tests/**/*.{ts,js}\"",
+    "lint:all": "npm run lint:backend && npm run lint:frontend && npm run lint:oauth && npm run lint:tests"
   },
   "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
     "concurrently": "^8.2.2",
+    "eslint": "^8.50.0",
+    "eslint-plugin-jsx-a11y": "^6.7.1",
+    "eslint-plugin-react": "^7.33.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
     "prettier": "^3.0.0",
     "ts-node": "^10.9.2"
   }

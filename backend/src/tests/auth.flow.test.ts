@@ -248,6 +248,7 @@ describe('Authentication Flow', () => {
     it('should handle expired access token', async () => {
       const user = createTestUser();
       const device = createTestDevice();
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { accessToken } = await loginUser(user, device);
 
       // Create an expired token
