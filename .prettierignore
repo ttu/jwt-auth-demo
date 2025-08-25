@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build outputs
+dist/
+build/
+**/dist/
+**/build/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Coverage
+coverage/
+**/coverage/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test results
+test-results/
+**/test-results/
+
+# Playwright
+playwright-report/
+**/playwright-report/
+
+# Package manager files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml

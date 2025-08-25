@@ -14,15 +14,23 @@
     "dev:backend": "cd backend && npm run dev",
     "dev:oauth": "cd oauth-server && npm run dev",
     "dev:frontend": "cd frontend && npm run dev",
-    "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install && cd ../oauth-server && npm install && cd ../integration-tests && npm install",
+    "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install && cd ../oauth-server && npm install && cd ../integration-tests && npm install && cd ..",
     "test:integration": "cd integration-tests && npm test",
     "test:integration:debug": "cd integration-tests && npm run test:debug",
     "test:integration:ui": "cd integration-tests && npm run test:ui",
     "test:integration:headed": "cd integration-tests && npm run test:headed",
-    "install:integration": "cd integration-tests && npm run install-deps"
+    "install:integration": "cd integration-tests && npm run install-deps",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "format:backend": "prettier --write \"backend/src/**/*.{ts,js,json}\"",
+    "format:frontend": "prettier --write \"frontend/src/**/*.{ts,tsx,js,jsx,json,css}\"",
+    "format:oauth": "prettier --write \"oauth-server/src/**/*.{ts,js,json,ejs}\"",
+    "format:tests": "prettier --write \"integration-tests/tests/**/*.{ts,js,json}\"",
+    "format:all": "npm run format:backend && npm run format:frontend && npm run format:oauth && npm run format:tests"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
+    "prettier": "^3.0.0",
     "ts-node": "^10.9.2"
   }
 }
