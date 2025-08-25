@@ -56,4 +56,9 @@ export const revokeSession = async (deviceId: string) => {
   await api.post('/auth/sessions/revoke', { deviceId });
 };
 
+export const getUserProfile = async () => {
+  const response = await api.get('/users/profile');
+  return response.data;
+};
+
 export { api };

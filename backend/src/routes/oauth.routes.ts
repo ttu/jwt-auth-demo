@@ -7,6 +7,7 @@ import { encodeState, decodeState } from '../utils/oauth.utils';
 import { generateNonce, validateNonce, cleanupNonces } from '../stores/nonce.store';
 import { setRefreshTokenCookie } from '../utils/cookie.utils';
 import { createToken } from '../utils/token.utils';
+import { storeOAuthUser } from '../stores/oauth-users.store';
 
 type TokenResponse = {
   access_token: string;
@@ -17,9 +18,6 @@ type TokenResponse = {
 };
 
 const router = Router();
-
-// In-memory store for OAuth users
-const oauthUsers: { [key: string]: OAuthUserInfo } = {};
 
 // OAuth login endpoint
 router.get('/oauth/:provider', async (req: RequestWithUser, res) => {
@@ -187,7 +185,7 @@ router.get('/callback/:provider', async (req: RequestWithUser, res) => {
     // debugger; // USER INFO RETRIEVED - Got user profile from OAuth server, now creating app tokens
     // We have: user profile (id, email, name) from OAuth provider
     // Next: Generate our own JWT tokens for this user session
-    oauthUsers[userInfo.email] = userInfo;
+    storeOAuthUser(userInfo.email, userInfo);
 
     // Generate application tokens
     const userId = parseInt(userInfo.id.split('-')[1], 10); // Extract the numeric part from the ID

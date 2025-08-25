@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import UserMenu from './UserMenu';
 
 const Navigation: React.FC = () => {
   const location = useLocation();
@@ -20,17 +21,10 @@ const Navigation: React.FC = () => {
               >
                 Customers
               </Link>
-              <Link
-                to="/sessions"
-                className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                  location.pathname === '/sessions'
-                    ? 'border-indigo-500 text-gray-900'
-                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                }`}
-              >
-                Sessions
-              </Link>
             </div>
+          </div>
+          <div className="flex items-center">
+            <UserMenu />
           </div>
         </div>
       </div>

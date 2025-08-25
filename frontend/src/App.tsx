@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './components/Login';
 import Customers from './components/Customers';
 import Sessions from './components/Sessions';
+import Account from './components/Account';
 import Navigation from './components/Navigation';
 import OAuthCallback from './components/OAuthCallback';
 import { DebugTokenView } from './components/DebugTokenView';
@@ -73,6 +74,16 @@ const App: React.FC = () => {
               <AuthRoute isPrivate>
                 <Layout>
                   <Sessions />
+                </Layout>
+              </AuthRoute>
+            }
+          />
+          <Route
+            path="/account"
+            element={
+              <AuthRoute isPrivate>
+                <Layout>
+                  <Account />
                 </Layout>
               </AuthRoute>
             }

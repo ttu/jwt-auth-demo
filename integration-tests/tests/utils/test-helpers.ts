@@ -82,9 +82,12 @@ export class TestHelpers {
       // Direct redirect to frontend callback
       this.page.waitForURL('**/auth/callback**', { timeout: 10000 }),
       // Direct redirect to authenticated area
-      this.page.waitForURL(url => url.pathname === '/customers' || url.pathname === '/' || url.pathname === '/sessions', {
-        timeout: 10000,
-      }),
+      this.page.waitForURL(
+        url => url.pathname === '/customers' || url.pathname === '/' || url.pathname === '/sessions',
+        {
+          timeout: 10000,
+        }
+      ),
       // Redirect back to login with error
       this.page.waitForURL('**/login**', { timeout: 10000 }),
     ]);
