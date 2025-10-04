@@ -11,7 +11,7 @@ This is a comprehensive JWT authentication demo featuring a React frontend, Node
 ### Multi-Service Architecture
 
 - **Backend (port 3001)**: Node.js/Express API server with JWT authentication
-- **Frontend (port 5173)**: React/Vite SPA with TypeScript
+- **Frontend (port 3000)**: React/Vite SPA with TypeScript
 - **OAuth Server (port 3002)**: Fake OAuth server for testing OAuth flows
 - **Integration Tests**: Playwright-based E2E tests
 
@@ -169,3 +169,24 @@ Backend requires these environment variables (defaults provided):
 - HTTP-only cookies disabled in demo for easier debugging
 - Token expiry intentionally short for demonstration
 - All OAuth providers are fake/mocked for testing
+
+## Documentation
+
+Documentation and Context Files in /docs folder. Use for using, creating, updating documentation.
+
+Reference these files for understanding the project and architecture.
+
+- `description.md`: App description, use cases, features.
+- `architecture.md`: Tech stack, folder structure, testing frameworks.
+- `datamodel.md`: Entities, attributes, relationships.
+- `frontend.md`: Views/screens, UI/UX patterns, styling.
+- `backend.md`: API endpoints, authentication, service architecture.
+- `debugging.md`: Debugging guide with VS Code setup and breakpoint instructions.
+- `integration-tests.md`: Integration testing guide with Playwright.
+- `todo.md`: Task list (✅ done, ⏳ in progress, ❌ not started). Update status, don't remove tasks.
+- `ai_changelog.md`: Log of changes made by AI. Add concise summaries here.
+- `learnings.md`: Technical learnings, best practices, error solutions. Add new findings here.
+
+Important files at root folder.
+
+- `README.md`: Quick start guide, key features overview, debugging instructions, documentation links, contributing guidelines, and license information
