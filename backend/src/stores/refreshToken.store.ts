@@ -1,7 +1,13 @@
 import { DeviceInfo, StoredToken } from '../types/index';
 import { v4 as uuidv4 } from 'uuid';
+import { createHash } from 'crypto';
 
-// In-memory store for refresh tokens
+// Helper function to hash tokens
+const hashToken = (token: string): string => {
+  return createHash('sha256').update(token).digest('hex');
+};
+
+// In-memory store for refresh tokens (keyed by token hash)
 export const refreshTokens = new Map<string, StoredToken>();
 
 // Store a refresh token
@@ -13,7 +19,8 @@ export const storeRefreshToken = (
   expiresIn: number
 ): void => {
   const expiresAt = new Date(Date.now() + expiresIn * 1000);
-  refreshTokens.set(token, {
+  const tokenHash = hashToken(token);
+  refreshTokens.set(tokenHash, {
     userId,
     deviceId,
     deviceInfo,
@@ -28,12 +35,13 @@ export const storeRefreshToken = (
 
 // Find a refresh token
 export const findRefreshToken = (token: string, userId: number, deviceId: string): StoredToken | null => {
-  const storedToken = refreshTokens.get(token);
+  const tokenHash = hashToken(token);
+  const storedToken = refreshTokens.get(tokenHash);
   if (!storedToken) return null;
 
   // Check if token is expired
   if (new Date() > storedToken.expiresAt) {
-    refreshTokens.delete(token); // Clean up expired token
+    refreshTokens.delete(tokenHash); // Clean up expired token
     return null;
   }
 
@@ -50,7 +58,8 @@ export const findRefreshToken = (token: string, userId: number, deviceId: string
 
 // Mark a refresh token as used
 export const markRefreshTokenAsUsed = (token: string): void => {
-  const storedToken = refreshTokens.get(token);
+  const tokenHash = hashToken(token);
+  const storedToken = refreshTokens.get(tokenHash);
   if (storedToken) {
     storedToken.isUsed = true;
   }
@@ -58,7 +67,8 @@ export const markRefreshTokenAsUsed = (token: string): void => {
 
 // Revoke a refresh token
 export const revokeRefreshToken = (token: string): void => {
-  const storedToken = refreshTokens.get(token);
+  const tokenHash = hashToken(token);
+  const storedToken = refreshTokens.get(tokenHash);
   if (storedToken) {
     storedToken.isRevoked = true;
   }

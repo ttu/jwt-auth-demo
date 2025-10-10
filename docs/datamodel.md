@@ -25,19 +25,27 @@ interface User {
 ### StoredToken
 
 **Purpose**: Manages refresh token lifecycle and device sessions
-**Storage**: In-memory Map with automatic cleanup
+**Storage**: In-memory Map (keyed by SHA-256 token hash) with automatic cleanup
 
 ```typescript
 interface StoredToken {
-  token: string; // JWT refresh token
   userId: number; // Reference to User.id
   deviceId: string; // Unique device identifier (UUID)
   deviceInfo: DeviceInfo; // Device metadata
-  expiresAt: number; // Expiration timestamp
+  expiresAt: Date; // Expiration timestamp
+  isRevoked: boolean; // Manual revocation flag
   isUsed: boolean; // Single-use flag
-  createdAt: number; // Creation timestamp
+  createdAt: Date; // Creation timestamp
+  lastUsedAt: Date; // Last usage timestamp
+  id: string; // UUID for session identification
 }
 ```
+
+**Security**:
+
+- Refresh tokens are **hashed using SHA-256** before storage
+- Map key is the hash (not the plaintext token)
+- Provides defense-in-depth against storage compromise
 
 **Relationships**:
 

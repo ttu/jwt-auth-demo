@@ -33,14 +33,38 @@ jwt.verify(token, secret, { algorithms: ['HS256'] });
 
 ### 3. Token Storage Security
 
-**Learning**: HTTP-only cookies are the most secure way to store refresh tokens
-**Current Issue**: `httpOnly: false` is set for demo purposes but should be `true` in production
+**Learning**: Multi-layered approach to secure refresh token storage
+
+**Server-Side Storage (Implemented)**:
+
+- Refresh tokens are **hashed using SHA-256** before storage in the Map
+- Even if the in-memory store is compromised, attackers cannot use the tokens
+- Hash lookup is O(1) - fast and secure
+- Provides defense-in-depth security
+
+**Client-Side Storage**:
+
+- HTTP-only cookies are the most secure way to transmit refresh tokens
+- **Current Issue**: `httpOnly: false` is set for demo purposes but should be `true` in production
 
 **Security Implications**:
 
-- JavaScript access to tokens enables XSS attacks
+- Server-side hashing prevents token theft from storage compromise
+- JavaScript access to tokens enables XSS attacks (if httpOnly is false)
 - HTTP-only cookies prevent client-side script access
 - Should be combined with `secure: true` and `sameSite: 'strict'`
+
+**Implementation**:
+
+```typescript
+// Hash before storing
+const tokenHash = createHash('sha256').update(token).digest('hex');
+refreshTokens.set(tokenHash, tokenData);
+
+// Hash before lookup
+const tokenHash = createHash('sha256').update(receivedToken).digest('hex');
+const storedToken = refreshTokens.get(tokenHash);
+```
 
 ### 4. Single-Use Refresh Tokens
 

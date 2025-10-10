@@ -7,7 +7,7 @@ A comprehensive React + Node.js demo showcasing secure JWT authentication with d
 - **Multiple Authentication Methods**: Password-based and OAuth (Google, Microsoft, Strava, Company)
 - **Device-Specific Sessions**: Each device gets unique token chains with session management
 - **Proactive Token Refresh**: Automatic background refresh prevents expiration interruptions
-- **Production Security**: Token blacklisting, CSRF protection, enhanced JWT claims
+- **Production Security**: SHA-256 hashed token storage, token blacklisting, CSRF protection, enhanced JWT claims
 - **Full OAuth 2.0**: Authorization Code Flow with OpenID Connect support
 
 ## 🚀 Quick Start

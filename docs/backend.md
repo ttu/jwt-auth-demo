@@ -471,14 +471,41 @@ The backend is configured to accept requests from the frontend running on `http:
 
 ```typescript
 interface StoredToken {
-  token: string;
   userId: number;
   deviceId: string;
   deviceInfo: DeviceInfo;
-  expiresAt: number;
+  expiresAt: Date;
+  isRevoked: boolean;
   isUsed: boolean;
-  createdAt: number;
+  createdAt: Date;
+  lastUsedAt: Date;
+  id: string; // UUID for session identification
 }
+```
+
+**Security Implementation**:
+
+- Refresh tokens are **hashed using SHA-256** before storage
+- The Map stores `tokenHash` as the key (not plaintext tokens)
+- Even if storage is compromised, tokens cannot be used
+- Hash lookup is fast (O(1)) and more secure than storing plaintext
+
+**Implementation**:
+
+```typescript
+import { createHash } from 'crypto';
+
+const hashToken = (token: string): string => {
+  return createHash('sha256').update(token).digest('hex');
+};
+
+// Storing a token
+const tokenHash = hashToken(refreshToken);
+refreshTokens.set(tokenHash, storedTokenData);
+
+// Looking up a token
+const tokenHash = hashToken(receivedToken);
+const storedToken = refreshTokens.get(tokenHash);
 ```
 
 #### Token Blacklist

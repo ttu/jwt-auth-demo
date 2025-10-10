@@ -19,7 +19,7 @@ This is a comprehensive JWT authentication demo featuring a React frontend, Node
 
 - **Token Management**: Dual-token system (access/refresh) with device tracking
 - **Session Management**: Virtual sessions via refresh token chains
-- **Security Features**: Token blacklisting, CSRF protection, automatic cleanup
+- **Security Features**: Token blacklisting, CSRF protection, SHA-256 hashed token storage, automatic cleanup
 - **OAuth Integration**: Support for Google, Microsoft, Strava, and Company providers
 
 ## Development Commands
@@ -104,6 +104,7 @@ npm run install-deps  # Install Playwright browsers
 - Enhanced JWT claims (iss, aud, jti, scope, version, deviceId)
 - HTTP-only cookies with SameSite=strict
 - CSRF protection via state parameters
+- **SHA-256 hashed refresh token storage** (defense-in-depth)
 - Token blacklisting and cleanup
 - Nonce validation for replay attack prevention
 
@@ -140,9 +141,9 @@ Backend requires these environment variables (defaults provided):
 ### Token Management Flow
 
 1. Login generates access + refresh token pair
-2. Refresh tokens stored server-side with device association
+2. Refresh tokens **hashed (SHA-256)** and stored server-side with device association
 3. Access tokens auto-refresh 5 minutes before expiration
-4. Token blacklisting for immediate revocation
+4. Token blacklisting for immediate revocation (JTI also hashed)
 5. Automatic cleanup of expired tokens every hour
 
 ## Development Tips
