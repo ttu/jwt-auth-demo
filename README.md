@@ -10,6 +10,20 @@ A comprehensive React + Node.js demo showcasing secure JWT authentication with d
 - **Production Security**: SHA-256 hashed token storage, token blacklisting, CSRF protection, enhanced JWT claims
 - **Full OAuth 2.0**: Authorization Code Flow with OpenID Connect support
 
+## 📋 Prerequisites
+
+- **Node.js**: 22.x or higher (LTS recommended)
+- **npm**: 10.x or higher
+
+### Using asdf (optional)
+
+If you use [asdf](https://asdf-vm.com/) for version management:
+
+```bash
+asdf plugin add nodejs
+asdf install
+```
+
 ## 🚀 Quick Start
 
 ```bash
