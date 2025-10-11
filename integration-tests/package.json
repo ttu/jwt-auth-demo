@@ -9,10 +9,12 @@
   },
   "scripts": {
     "test": "playwright test",
+    "test:ci": "playwright test --reporter=list",
     "test:debug": "playwright test --debug",
     "test:ui": "playwright test --ui",
     "test:headed": "playwright test --headed",
     "install-deps": "npx playwright install",
+    "postinstall": "playwright install --with-deps",
     "format": "prettier --write \"tests/**/*.{ts,js,json}\"",
     "format:check": "prettier --check \"tests/**/*.{ts,js,json}\"",
     "lint": "eslint --config .eslintrc.cjs \"tests/**/*.{ts,js}\"",

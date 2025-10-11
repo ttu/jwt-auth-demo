@@ -125,11 +125,12 @@ export class TestHelpers {
    * Logout from the application
    */
   async logout(): Promise<void> {
-    // Navigate to customers page where the logout button is located
-    await this.page.goto('/customers');
+    // Navigate to account page
+    await this.page.goto('/account');
+    await expect(this.page).toHaveURL('/account');
 
-    // Look for logout button on the customers page
-    const logoutButton = this.page.locator('button').filter({ hasText: /logout|sign out/i });
+    // Look for Sign Out button on the account page
+    const logoutButton = this.page.locator('button').filter({ hasText: /sign out/i });
     await expect(logoutButton).toBeVisible();
     await logoutButton.click();
 
