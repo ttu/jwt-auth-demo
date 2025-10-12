@@ -133,7 +133,7 @@ describe('Authentication Flow', () => {
       const { accessToken } = await loginUser(user, device);
 
       const response = await request(app)
-        .get('/api/users/list')
+        .get('/api/customers/list')
         .set('Authorization', `Bearer ${accessToken}`)
         .set('x-device-id', device.deviceId);
 
@@ -141,7 +141,7 @@ describe('Authentication Flow', () => {
     });
 
     it('should reject protected route with invalid token', async () => {
-      const response = await request(app).get('/api/users/list').set('Authorization', 'Bearer invalid-token');
+      const response = await request(app).get('/api/customers/list').set('Authorization', 'Bearer invalid-token');
 
       expect(response.status).toBe(401);
     });
@@ -198,7 +198,7 @@ describe('Authentication Flow', () => {
       const { accessToken } = await loginUser(user, device);
 
       const response = await request(app)
-        .get('/api/auth/sessions')
+        .get('/api/sessions')
         .set('Authorization', `Bearer ${accessToken}`)
         .set('x-device-id', device.deviceId);
 
@@ -212,7 +212,7 @@ describe('Authentication Flow', () => {
       const { accessToken } = await loginUser(user, device);
 
       const response = await request(app)
-        .post('/api/auth/sessions/revoke')
+        .post('/api/sessions/revoke')
         .set('Authorization', `Bearer ${accessToken}`)
         .send({ deviceId: device.deviceId });
 
@@ -236,7 +236,7 @@ describe('Authentication Flow', () => {
 
       // Verify tokens are cleared
       const tokenCheck = await request(app)
-        .get('/api/users/list')
+        .get('/api/customers/list')
         .set('Authorization', `Bearer ${accessToken}`)
         .set('x-device-id', device.deviceId);
 
@@ -248,23 +248,34 @@ describe('Authentication Flow', () => {
     it('should handle expired access token', async () => {
       const user = createTestUser();
       const device = createTestDevice();
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { accessToken } = await loginUser(user, device);
 
-      // Create an expired token
-      const expiredToken = jwt.sign({ userId: 1, username: user.username }, process.env.JWT_ACCESS_SECRET!, {
-        expiresIn: '1s',
-      });
+      // Create a properly formatted token that expires in 1 second
+      const expiredToken = jwt.sign(
+        {
+          iss: 'your-app-name',
+          sub: user.id.toString(),
+          aud: ['api'],
+          jti: 'test-jti-' + Math.random(),
+          userId: user.id,
+          username: user.username,
+          scope: ['read', 'write'],
+          version: '1.0',
+          iat: Math.floor(Date.now() / 1000),
+        },
+        process.env.JWT_ACCESS_SECRET!,
+        { expiresIn: '1s' }
+      );
 
       // Wait for token to expire
       await new Promise(resolve => setTimeout(resolve, 2000));
 
       const response = await request(app)
-        .get('/api/users/list')
+        .get('/api/customers/list')
         .set('Authorization', `Bearer ${expiredToken}`)
         .set('x-device-id', device.deviceId);
 
       expect(response.status).toBe(401);
+      expect(response.body.message).toBe('Invalid token');
     });
   });
 });
