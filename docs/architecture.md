@@ -6,17 +6,17 @@ Tech stack, folder structure, testing frameworks.
 
 ### Backend
 
-- **Runtime**: Node.js with Express framework
+- **Runtime**: Node.js with Express 5 framework
 - **Language**: TypeScript for type safety
 - **JWT Library**: `jsonwebtoken` v9.0.2
-- **Testing**: Jest for unit testing
-- **Linting**: ESLint with TypeScript support
+- **Testing**: Jest 30 for unit testing
+- **Linting**: ESLint 9 with flat config and TypeScript support
 
 ### Frontend
 
-- **Framework**: React 18 with TypeScript
+- **Framework**: React 19 with TypeScript
 - **Build Tool**: Vite for fast development and building
-- **Styling**: Tailwind CSS for utility-first styling
+- **Styling**: Tailwind CSS 3 for utility-first styling
 - **HTTP Client**: Fetch API with custom interceptors
 
 ### OAuth Server

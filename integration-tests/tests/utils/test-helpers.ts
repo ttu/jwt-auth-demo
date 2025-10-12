@@ -23,7 +23,7 @@ export class TestHelpers {
           await axios.get(service.url, { timeout: 2000 });
           console.log(`✓ ${service.name} is ready`);
           break;
-        } catch (error) {
+        } catch (_error) {
           retries--;
           if (retries === 0) {
             throw new Error(`${service.name} failed to start on ${service.url}`);

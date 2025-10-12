@@ -35,7 +35,7 @@ export const checkTokenValidity = (accessToken: string): boolean => {
 
     console.info(`[Authentication] Token expires in ${Math.round(timeUntilExpiration / 1000)} seconds`);
     return true;
-  } catch (error) {
+  } catch (_error) {
     console.error('[Authentication] Error checking token validity:', accessToken);
     return false;
   }

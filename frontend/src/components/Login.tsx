@@ -25,7 +25,7 @@ const Login: React.FC = () => {
       // debugger; // PASSWORD LOGIN SUCCESS - Login successful, navigating to protected content
       // AuthContext confirmed login success, user is now authenticated
       navigate('/users');
-    } catch (err) {
+    } catch (_err) {
       // debugger; // PASSWORD LOGIN FAILED - Login failed, showing error to user
       // Login attempt failed, display error message for user to try again
       setError('Invalid credentials');
@@ -41,7 +41,7 @@ const Login: React.FC = () => {
     try {
       await initiateOAuthLogin(provider);
       // Note: If successful, user will be redirected to OAuth server, so this code won't continue
-    } catch (err) {
+    } catch (_err) {
       // debugger; // OAUTH INITIATION FAILED - Failed to start OAuth flow
       // OAuth initiation failed, showing error and resetting UI state
       setError('Failed to initiate OAuth login');

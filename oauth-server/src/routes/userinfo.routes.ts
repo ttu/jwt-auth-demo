@@ -29,7 +29,7 @@ router.get('/userinfo', (req, res) => {
     const decoded = jwt.verify(token, config.jwtSecret, verifyOptions) as { sub: string; provider: OAuthProvider };
     const user = mockUsers[decoded.provider];
     res.json(user);
-  } catch (error) {
+  } catch (_error) {
     // debugger; // OAUTH SERVER: Invalid Token - Access token validation failed
     // Token is expired, invalid signature, or malformed
     res.status(401).json({ error: 'invalid_token' });

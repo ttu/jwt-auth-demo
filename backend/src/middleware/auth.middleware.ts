@@ -33,7 +33,7 @@ export const verifyAccessToken = (req: RequestWithUser, res: Response, next: Nex
 
     req.user = decoded;
     next();
-  } catch (error) {
+  } catch (_error) {
     return res.status(401).json({ message: 'Invalid token' });
   }
 };

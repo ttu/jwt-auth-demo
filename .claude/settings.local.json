@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run test:integration:*)",
+      "Bash(npm run test:integration:ci:*)",
+      "Bash(npm run build:backend:*)",
+      "Bash(timeout 5 npm run dev)",
+      "Bash(gtimeout 5 npm run dev)",
+      "Bash(npm uninstall:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npm ls:*)",
+      "Bash(npm:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
