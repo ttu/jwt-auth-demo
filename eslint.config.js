@@ -8,13 +8,7 @@ import jsxA11yPlugin from 'eslint-plugin-jsx-a11y';
 export default [
   // Global ignores
   {
-    ignores: [
-      '**/node_modules/**',
-      '**/dist/**',
-      '**/build/**',
-      '**/.vite/**',
-      '**/coverage/**',
-    ],
+    ignores: ['**/node_modules/**', '**/dist/**', '**/build/**', '**/.vite/**', '**/coverage/**'],
   },
 
   // Base config for all JS/TS files

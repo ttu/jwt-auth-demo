@@ -1,5 +1,7 @@
 # 🔐 JWT Authentication Demo
 
+[![CI](https://github.com/ttu/jwt-auth-demo/actions/workflows/ci.yml/badge.svg)](https://github.com/ttu/jwt-auth-demo/actions/workflows/ci.yml)
+
 A comprehensive React + Node.js demo showcasing secure JWT authentication with device-specific sessions, OAuth integration, and production-ready security features.
 
 ## ✨ Key Features
@@ -62,13 +64,11 @@ See [debugging guide](docs/debugging.md) for comprehensive debugging instruction
 - **[Frontend Implementation](docs/frontend.md)** - React components, state management, and UI patterns
 - **[Data Model](docs/datamodel.md)** - Entities, relationships, and data structures
 - **[App Description](docs/description.md)** - Features, use cases, and project overview
-- **[Integration Tests](docs/integration-tests.md)** - End-to-end testing with Playwright
+- **[Testing Guide](docs/testing.md)** - Unit tests, integration tests, and CI/CD pipeline
 
 ## Contributing
 
 Contributions, issues, and feature requests are welcome! Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
-
-
 
 ## License
 

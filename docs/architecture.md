@@ -236,6 +236,7 @@ sequenceDiagram
 ## Security Features
 
 ### OAuth Security Features
+
 - State parameter for CSRF protection
 - Nonce in ID token for replay attack prevention
 - HTTP-only cookies for token storage
@@ -245,6 +246,7 @@ sequenceDiagram
 - Automatic cleanup of expired authorization codes
 
 ### General Security Measures
+
 - **Access Tokens**
   - Short-lived (15 seconds for demo)
   - Stored in memory
@@ -301,7 +303,7 @@ All JWT tokens include enhanced claims for improved security:
 This is a comprehensive JWT authentication demo featuring a multi-service architecture:
 
 - **Backend (port 3001)**: Node.js/Express API server with JWT authentication
-- **Frontend (port 5173)**: React/Vite SPA with TypeScript  
+- **Frontend (port 5173)**: React/Vite SPA with TypeScript
 - **OAuth Server (port 3002)**: Fake OAuth server for testing OAuth flows
 - **Integration Tests**: Playwright-based E2E tests
 
@@ -313,7 +315,7 @@ This is a comprehensive JWT authentication demo featuring a multi-service archit
 │   ├── src/
 │   │   ├── routes/           # API route handlers
 │   │   │   ├── auth.js       # Authentication endpoints
-│   │   │   ├── customers.js  # Customer data endpoints  
+│   │   │   ├── customers.js  # Customer data endpoints
 │   │   │   ├── sessions.js   # Session management
 │   │   │   └── users.js      # User profile endpoints
 │   │   ├── middleware/       # Express middleware
@@ -424,6 +426,7 @@ This is a comprehensive JWT authentication demo featuring a multi-service archit
 ### Quick Setup
 
 1. **Clone and Install**
+
    ```bash
    git clone <repository-url>
    cd react-node-jwt-example
@@ -431,6 +434,7 @@ This is a comprehensive JWT authentication demo featuring a multi-service archit
    ```
 
 2. **Start All Services**
+
    ```bash
    npm run dev
    ```
@@ -443,6 +447,7 @@ This is a comprehensive JWT authentication demo featuring a multi-service archit
 ### Individual Service Setup
 
 #### Backend Setup
+
 ```bash
 cd backend
 npm install
@@ -451,7 +456,8 @@ npm run build      # TypeScript compilation
 npm run start      # Production mode
 ```
 
-#### Frontend Setup  
+#### Frontend Setup
+
 ```bash
 cd frontend
 npm install
@@ -461,6 +467,7 @@ npm run preview    # Preview production build
 ```
 
 #### OAuth Server Setup
+
 ```bash
 cd oauth-server
 npm install
@@ -470,6 +477,7 @@ npm run start      # Production mode
 ```
 
 #### Integration Tests Setup
+
 ```bash
 cd integration-tests
 npm install
@@ -482,6 +490,7 @@ npm run test:debug   # Run with debugging
 ## Environment Configuration
 
 ### Backend Environment (.env)
+
 ```env
 PORT=3001
 JWT_ACCESS_SECRET=your_access_secret
@@ -492,6 +501,7 @@ NODE_ENV=development
 ```
 
 ### OAuth Server Environment
+
 ```env
 PORT=3002
 JWT_SECRET=fake-oauth-secret
@@ -512,6 +522,7 @@ COMPANY_CLIENT_SECRET=fake-company-client-secret
 ## Development Workflow
 
 ### Available Scripts (Root Level)
+
 ```bash
 npm run install:all       # Install all dependencies
 npm run dev              # Start all services in development
@@ -522,11 +533,13 @@ npm run clean            # Clean all node_modules and build artifacts
 ```
 
 ### Testing Strategy
+
 - **Unit Tests**: Jest for backend business logic testing
 - **Integration Tests**: Playwright for full-flow E2E testing
 - **Manual Testing**: Demo user (demo/password123) for quick verification
 
 ### Code Quality
+
 - **TypeScript**: Full TypeScript support in frontend
 - **ESLint**: Code linting for consistency
 - **Prettier**: Code formatting
@@ -535,12 +548,14 @@ npm run clean            # Clean all node_modules and build artifacts
 ## Security Considerations
 
 ### Development vs Production
+
 - **Token Expiry**: Very short for demo (15 seconds), should be longer in production (15-30 minutes)
 - **HTTP-Only Cookies**: Disabled in demo for debugging, should be enabled in production
 - **HTTPS**: Required in production for secure cookie transmission
 - **Secrets**: Use strong, random secrets in production environments
 
 ### Best Practices Implemented
+
 - **No Secrets in Code**: All secrets configured through environment variables
 - **Memory Storage**: Access tokens stored in memory, not localStorage
 - **Token Rotation**: Single-use refresh tokens with automatic rotation

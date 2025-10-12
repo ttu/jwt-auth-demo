@@ -16,9 +16,5 @@ export default {
       },
     ],
   },
-  collectCoverageFrom: [
-    'src/**/*.ts',
-    '!src/**/*.test.ts',
-    '!src/**/*.d.ts',
-  ],
+  collectCoverageFrom: ['src/**/*.ts', '!src/**/*.test.ts', '!src/**/*.d.ts'],
 };

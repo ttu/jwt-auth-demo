@@ -17,6 +17,7 @@ Base URL: `http://localhost:3001/api`
 User login with credentials.
 
 **Request:**
+
 ```json
 {
   "email": "string",
@@ -25,11 +26,13 @@ User login with credentials.
 ```
 
 **Headers:**
+
 ```
 X-Device-Id: unique_device_identifier
 ```
 
 **Response:**
+
 ```json
 {
   "accessToken": "jwt_access_token",
@@ -41,6 +44,7 @@ X-Device-Id: unique_device_identifier
 ```
 
 **Cookies Set:**
+
 - `refreshToken`: HTTP-only refresh token (7 days expiry)
 
 #### POST `/api/auth/refresh`
@@ -48,11 +52,13 @@ X-Device-Id: unique_device_identifier
 Refresh access token using refresh token.
 
 **Headers:**
+
 ```
 Cookie: refreshToken=jwt_refresh_token
 ```
 
 **Response:**
+
 ```json
 {
   "accessToken": "new_jwt_access_token"
@@ -60,6 +66,7 @@ Cookie: refreshToken=jwt_refresh_token
 ```
 
 **Cookies Set:**
+
 - `refreshToken`: New HTTP-only refresh token
 
 #### POST `/api/auth/logout`
@@ -67,12 +74,14 @@ Cookie: refreshToken=jwt_refresh_token
 Logout user and invalidate tokens.
 
 **Headers:**
+
 ```
 Authorization: Bearer jwt_access_token
 Cookie: refreshToken=jwt_refresh_token
 ```
 
 **Response:**
+
 ```json
 {
   "message": "Logged out successfully"
@@ -80,6 +89,7 @@ Cookie: refreshToken=jwt_refresh_token
 ```
 
 **Cookies Cleared:**
+
 - `refreshToken`: Removed from client
 
 #### POST `/api/auth/invalidate-token`
@@ -87,11 +97,13 @@ Cookie: refreshToken=jwt_refresh_token
 Invalidate current access token (add to blacklist).
 
 **Headers:**
+
 ```
 Authorization: Bearer jwt_access_token
 ```
 
 **Response:**
+
 ```json
 {
   "message": "Token invalidated successfully"
@@ -105,14 +117,17 @@ Authorization: Bearer jwt_access_token
 Start OAuth authentication flow.
 
 **Parameters:**
+
 - `provider`: One of `google`, `microsoft`, `strava`, `company`
 
 **Headers:**
+
 ```
 X-Device-Id: unique_device_identifier
 ```
 
 **Response:**
+
 ```json
 {
   "authUrl": "https://oauth-provider.com/authorize?response_type=code&client_id=..."
@@ -124,13 +139,16 @@ X-Device-Id: unique_device_identifier
 Handle OAuth callback and complete authentication.
 
 **Parameters:**
+
 - `provider`: One of `google`, `microsoft`, `strava`, `company`
 
 **Query Parameters:**
+
 - `code`: Authorization code from OAuth provider
 - `state`: State parameter for CSRF protection
 
 **Response:**
+
 ```json
 {
   "accessToken": "jwt_access_token",
@@ -143,6 +161,7 @@ Handle OAuth callback and complete authentication.
 ```
 
 **Cookies Set:**
+
 - `refreshToken`: HTTP-only refresh token (7 days expiry)
 
 ### Session Management Endpoints
@@ -152,11 +171,13 @@ Handle OAuth callback and complete authentication.
 Get list of active sessions for the current user.
 
 **Headers:**
+
 ```
 Authorization: Bearer jwt_access_token
 ```
 
 **Response:**
+
 ```json
 {
   "sessions": [
@@ -176,11 +197,13 @@ Authorization: Bearer jwt_access_token
 Revoke a specific session by device ID.
 
 **Headers:**
+
 ```
 Authorization: Bearer jwt_access_token
 ```
 
 **Request:**
+
 ```json
 {
   "deviceId": "device_to_revoke"
@@ -188,6 +211,7 @@ Authorization: Bearer jwt_access_token
 ```
 
 **Response:**
+
 ```json
 {
   "message": "Session revoked successfully"
@@ -201,11 +225,13 @@ Authorization: Bearer jwt_access_token
 Get list of customers (protected endpoint).
 
 **Headers:**
+
 ```
 Authorization: Bearer jwt_access_token
 ```
 
 **Response:**
+
 ```json
 {
   "customers": [
@@ -223,11 +249,13 @@ Authorization: Bearer jwt_access_token
 Get current user profile information.
 
 **Headers:**
+
 ```
 Authorization: Bearer jwt_access_token
 ```
 
 **Response:**
+
 ```json
 {
   "user": {
@@ -252,6 +280,7 @@ The fake OAuth server provides the following endpoints for testing OAuth flows:
 OAuth authorization endpoint that displays the consent page.
 
 **Query Parameters:**
+
 - `response_type`: Must be `code`
 - `client_id`: Client identifier
 - `redirect_uri`: Callback URL
@@ -261,6 +290,7 @@ OAuth authorization endpoint that displays the consent page.
 - `provider`: Provider name (`google`, `microsoft`, `strava`, `company`)
 
 **Response:**
+
 - HTML consent page for user authorization
 - Or redirect to `redirect_uri` with authorization code
 
@@ -269,9 +299,11 @@ OAuth authorization endpoint that displays the consent page.
 Confirm user authorization and generate authorization code.
 
 **Form Data:**
+
 - Same parameters as GET `/oauth/authorize`
 
 **Response:**
+
 - Redirect to `redirect_uri` with:
   - `code`: Authorization code
   - `state`: Original state parameter
@@ -283,6 +315,7 @@ Confirm user authorization and generate authorization code.
 Exchange authorization code for tokens.
 
 **Request:**
+
 ```json
 {
   "grant_type": "authorization_code",
@@ -295,10 +328,11 @@ Exchange authorization code for tokens.
 ```
 
 **Response:**
+
 ```json
 {
   "access_token": "oauth_access_token",
-  "refresh_token": "oauth_refresh_token", 
+  "refresh_token": "oauth_refresh_token",
   "id_token": "openid_connect_id_token",
   "token_type": "Bearer",
   "expires_in": 3600
@@ -312,6 +346,7 @@ Exchange authorization code for tokens.
 Get user profile information using OAuth access token.
 
 **Headers:**
+
 ```
 Authorization: Bearer oauth_access_token
 ```
@@ -319,6 +354,7 @@ Authorization: Bearer oauth_access_token
 **Response (varies by provider):**
 
 **Google/Microsoft/Company:**
+
 ```json
 {
   "sub": "user_id",
@@ -330,6 +366,7 @@ Authorization: Bearer oauth_access_token
 ```
 
 **Strava:**
+
 ```json
 {
   "sub": "athlete_id",
@@ -346,6 +383,7 @@ Authorization: Bearer oauth_access_token
 All endpoints may return the following error responses:
 
 ### `400 Bad Request`
+
 ```json
 {
   "error": "Invalid request parameters"
@@ -353,6 +391,7 @@ All endpoints may return the following error responses:
 ```
 
 ### `401 Unauthorized`
+
 ```json
 {
   "error": "Invalid or expired token"
@@ -360,6 +399,7 @@ All endpoints may return the following error responses:
 ```
 
 ### `403 Forbidden`
+
 ```json
 {
   "error": "Insufficient permissions"
@@ -367,6 +407,7 @@ All endpoints may return the following error responses:
 ```
 
 ### `404 Not Found`
+
 ```json
 {
   "error": "Resource not found"
@@ -374,6 +415,7 @@ All endpoints may return the following error responses:
 ```
 
 ### `500 Internal Server Error`
+
 ```json
 {
   "error": "Internal server error"
@@ -383,6 +425,7 @@ All endpoints may return the following error responses:
 ## Authentication Headers
 
 ### Access Token Usage
+
 All protected endpoints require the access token in the Authorization header:
 
 ```
@@ -390,6 +433,7 @@ Authorization: Bearer <access_token>
 ```
 
 ### Device ID Header
+
 Authentication endpoints require a device ID header:
 
 ```
@@ -397,6 +441,7 @@ X-Device-Id: <unique_device_identifier>
 ```
 
 ### Refresh Token Usage
+
 Token refresh requires the refresh token in an HTTP-only cookie:
 
 ```

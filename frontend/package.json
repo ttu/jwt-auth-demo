@@ -1,6 +1,7 @@
 {
   "name": "jwt-auth-demo-frontend",
   "version": "1.0.0",
+  "description": "JWT Authentication Demo - Frontend",
   "private": true,
   "type": "module",
   "engines": {

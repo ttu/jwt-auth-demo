@@ -1,7 +1,7 @@
 {
-  "name": "fake-oauth-server",
+  "name": "jwt-auth-demo-oauth-server",
   "version": "1.0.0",
-  "description": "A fake OAuth server for testing OAuth flows",
+  "description": "JWT Authentication Demo - OAuth Server",
   "main": "dist/index.js",
   "engines": {
     "node": ">=22.0.0",

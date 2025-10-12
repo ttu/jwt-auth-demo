@@ -1,7 +1,7 @@
 {
-  "name": "react-node-jwt-integration-tests",
+  "name": "jwt-auth-demo-integration-tests",
   "version": "1.0.0",
-  "description": "Integration tests for React Node JWT Example",
+  "description": "JWT Authentication Demo - Integration Tests",
   "type": "module",
   "engines": {
     "node": ">=22.0.0",

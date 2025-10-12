@@ -24,6 +24,7 @@ This directory contains comprehensive documentation for the JWT authentication d
 ## Usage
 
 These documentation files serve as:
+
 - Reference material for understanding the project structure
 - Guidelines for maintaining code consistency
 - Historical record of development decisions and learnings
@@ -31,4 +32,4 @@ These documentation files serve as:
 
 ## Migration
 
-These documentation files were migrated from Cursor's automatically generated AI-*.md files and combined with existing documentation to provide structured project documentation for better organization and accessibility.
+These documentation files were migrated from Cursor's automatically generated AI-\*.md files and combined with existing documentation to provide structured project documentation for better organization and accessibility.

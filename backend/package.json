@@ -1,7 +1,7 @@
 {
   "name": "jwt-auth-demo-backend",
   "version": "1.0.0",
-  "description": "JWT Authentication Demo Backend",
+  "description": "JWT Authentication Demo - Backend",
   "main": "dist/index.js",
   "engines": {
     "node": ">=22.0.0",
