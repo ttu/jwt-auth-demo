@@ -172,6 +172,47 @@ The CI runs the following jobs in parallel:
 4. **Integration Tests**: Runs Playwright E2E tests
 5. **Security Audit**: npm audit on all packages
 
+### Running CI Locally
+
+You can run the complete CI pipeline locally before pushing:
+
+```bash
+# Run the full CI pipeline locally
+./test-ci.sh
+```
+
+This script runs all the same checks as GitHub Actions:
+
+1. **Cleans environment** (kills running services, removes build artifacts via `npm run clean:build`)
+2. **Installs dependencies** across all packages
+3. **Runs ESLint** and Prettier checks
+4. **Builds all services** (backend, oauth-server, frontend)
+5. **Runs all 114 unit tests** (backend + oauth-server)
+6. **Runs integration tests** (Playwright E2E)
+7. **Performs security audit** (non-blocking)
+
+### Individual CI Steps
+
+You can also run individual CI steps:
+
+```bash
+# Lint
+npm run lint:all
+npm run format:check
+
+# Build
+npm run build
+
+# Unit tests
+npm run test:unit
+
+# Integration tests
+npm run test:integration:ci
+
+# Security audit
+npm run audit:all
+```
+
 ### Scheduled Runs
 
 CI also runs automatically every Monday at midnight UTC to catch dependency issues.

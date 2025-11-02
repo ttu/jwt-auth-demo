@@ -118,8 +118,14 @@ Backend requires these environment variables (defaults provided):
 
 ### Testing Strategy
 
-- **Unit Tests**: Jest for backend business logic
-- **Integration Tests**: Playwright for full OAuth and password flows
+- **Unit Tests (114 tests)**:
+  - Backend (56 tests): Token utils, OAuth utils, refresh token store, auth flows
+  - OAuth Server (58 tests): Authorization store, configuration
+  - Run: `npm run test:unit`
+- **Integration Tests**: Playwright E2E tests for full OAuth and password flows
+  - Run: `npm run test:integration`
+- **CI Pipeline**: GitHub Actions runs all tests on push/PR + weekly schedule
+  - Run locally: `./test-ci.sh`
 - **Manual Testing**: Login with demo/password123
 
 ## Code Structure Notes
@@ -156,6 +162,33 @@ Backend requires these environment variables (defaults provided):
 - OAuth server UI at http://localhost:3002
 - Check integration tests for OAuth flow examples
 
+### After Completing Features
+
+**IMPORTANT**: After completing any feature or making significant changes, run the following commands:
+
+```bash
+# 1. Format all code
+npm run format
+
+# 2. Fix linting issues automatically
+npm run lint:fix
+
+# 3. Run complete CI pipeline locally (cleans, lints, builds, tests)
+./test-ci.sh
+```
+
+The `test-ci.sh` script runs all the same checks as GitHub Actions CI:
+
+1. Cleans environment (kills services, removes build artifacts)
+2. Installs dependencies
+3. Runs ESLint and Prettier checks
+4. Builds all services
+5. Runs all 114 unit tests
+6. Runs integration tests
+7. Performs security audit
+
+This ensures your changes are ready to push and will pass CI checks.
+
 ### Debugging
 
 - Backend logs include detailed token validation steps
@@ -183,7 +216,7 @@ Reference these files for understanding the project and architecture.
 - `frontend.md`: Views/screens, UI/UX patterns, styling.
 - `backend.md`: API endpoints, authentication, service architecture.
 - `debugging.md`: Debugging guide with VS Code setup and breakpoint instructions.
-- `integration-tests.md`: Integration testing guide with Playwright.
+- `testing.md`: Complete testing guide - unit tests (114 tests), integration tests, and CI/CD pipeline.
 - `todo.md`: Task list (✅ done, ⏳ in progress, ❌ not started). Update status, don't remove tasks.
 - `ai_changelog.md`: Log of changes made by AI. Add concise summaries here.
 - `learnings.md`: Technical learnings, best practices, error solutions. Add new findings here.
