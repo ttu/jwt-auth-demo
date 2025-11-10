@@ -17,7 +17,7 @@ app.set('views', path.join(__dirname, 'views'));
 
 // CORS configuration
 const corsOptions = {
-  origin: ['http://localhost:3000', 'http://localhost:3001'],
+  origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3003'],
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,

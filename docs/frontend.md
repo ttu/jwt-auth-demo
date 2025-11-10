@@ -2,9 +2,20 @@
 
 Views/screens, UI/UX patterns, styling.
 
+## Overview
+
+This project includes **two frontend applications**:
+
+1. **Main Frontend** (port 3000): Full-featured app with backend-proxied OAuth flow
+2. **Frontend Standalone** (port 3003): Pure SPA demonstrating Authorization Code + PKCE flow
+
 ## Application Structure
 
-### Main Components
+### Main Frontend Application (port 3000)
+
+The main frontend application provides a complete authentication experience with backend integration.
+
+#### Main Components
 
 #### App.tsx
 
@@ -81,6 +92,91 @@ Views/screens, UI/UX patterns, styling.
 - Token expiration monitoring
 - Claims visualization
 - Refresh token testing
+
+### Frontend Standalone Application (port 3003)
+
+The standalone application demonstrates **Authorization Code + PKCE (RFC 7636)** flow for SPAs without requiring a backend server.
+
+#### App.tsx (Standalone)
+
+**Purpose**: Single-page application with pure frontend OAuth + PKCE
+**Features**:
+
+- PKCE parameter generation (code_verifier, code_challenge)
+- State parameter for CSRF protection
+- Direct OAuth flow without backend proxy
+- SessionStorage for temporary PKCE data
+- Real user info from OAuth server
+- Educational inline comments explaining each step
+
+**PKCE Flow Implementation**:
+
+```typescript
+// 1. Generate PKCE parameters
+const { state, codeVerifier, codeChallenge, codeChallengeMethod } = await generateOAuthParameters();
+
+// 2. Store in sessionStorage
+sessionStorage.setItem('oauth_state', state);
+sessionStorage.setItem('code_verifier', codeVerifier);
+sessionStorage.setItem('provider', provider);
+
+// 3. Redirect with code_challenge
+const authUrl = `${OAUTH_SERVER_URL}/oauth/authorize?...&code_challenge=${codeChallenge}&code_challenge_method=S256`;
+
+// 4. On callback, exchange code + verifier
+const response = await fetch(`${OAUTH_SERVER_URL}/oauth/token`, {
+  method: 'POST',
+  body: JSON.stringify({
+    code,
+    code_verifier: codeVerifier,
+    // ...
+  }),
+});
+```
+
+#### PKCE Utilities (frontend-standalone/src/utils/pkce.ts)
+
+**Purpose**: RFC 7636 compliant PKCE implementation
+**Functions**:
+
+- `generateCodeVerifier(length)`: Cryptographically secure random string (43-128 chars)
+- `generateCodeChallenge(verifier)`: SHA-256 hash + Base64URL encoding
+- `generateState(length)`: CSRF protection parameter
+- `validateCodeVerifier(verifier)`: RFC 7636 format validation
+- `generateOAuthParameters()`: Complete OAuth + PKCE parameters
+- `base64UrlEncode(buffer)`: URL-safe Base64 encoding
+
+**Security Features**:
+
+- Uses Web Crypto API (`crypto.getRandomValues()`)
+- SHA-256 hashing (S256 method)
+- Base64URL encoding without padding
+- RFC 7636 character set compliance
+- No client secret needed
+
+**Example Usage**:
+
+```typescript
+// Generate complete OAuth parameters
+const params = await generateOAuthParameters();
+// {
+//   state: "abc123...",
+//   codeVerifier: "long_random_string...",
+//   codeChallenge: "base64url_sha256_hash...",
+//   codeChallengeMethod: "S256"
+// }
+
+// Validate code verifier
+const isValid = validateCodeVerifier(params.codeVerifier);
+```
+
+**Why PKCE is Secure for SPAs**:
+
+1. **No Client Secret**: SPAs can't securely store secrets
+2. **Code Interception Protection**: Even if authorization code is stolen, attacker can't use it
+3. **Cryptographic Proof**: code_verifier proves same client initiated and completed flow
+4. **OAuth 2.1 Compliant**: Required for all public clients
+5. **Approved by OAuth 2.0 Security BCP**: Modern best practice
 
 ## UI/UX Patterns
 

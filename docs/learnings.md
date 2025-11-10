@@ -128,6 +128,154 @@ const storedToken = refreshTokens.get(tokenHash);
 - Maintained `no-console` warnings in frontend, allowed in backend
 - Proper environment-specific linting rules
 
+## PKCE Implementation Learnings
+
+### 1. PKCE for Public Clients (RFC 7636)
+
+**Problem**: SPAs and mobile apps cannot securely store client secrets
+**Solution**: PKCE (Proof Key for Code Exchange) eliminates the need for client secrets
+**Learning**: PKCE is now required by OAuth 2.1 for all public clients
+
+**How PKCE Works**:
+
+1. Client generates random `code_verifier` (128 characters recommended)
+2. Client creates `code_challenge = SHA256(code_verifier)` + Base64URL encoding
+3. Client sends `code_challenge` with authorization request
+4. Authorization server stores `code_challenge` with authorization code
+5. Client sends `code_verifier` with token request
+6. Server verifies: `SHA256(code_verifier) === stored code_challenge`
+
+**Security Benefits**:
+
+- Prevents authorization code interception attacks
+- No client secret needed (safe for SPAs)
+- Cryptographically proves same client completed the flow
+- Even if authorization code is stolen, attacker cannot use it
+- Approved by OAuth 2.0 Security Best Current Practice
+
+### 2. Web Crypto API for Secure Random Generation
+
+**Learning**: Never use `Math.random()` for security-critical operations
+**Solution**: Use Web Crypto API for cryptographically secure random values
+
+**Implementation**:
+
+```typescript
+// ❌ BAD: Not cryptographically secure
+const insecure = Math.random().toString(36);
+
+// ✅ GOOD: Cryptographically secure
+const randomValues = new Uint8Array(128);
+crypto.getRandomValues(randomValues);
+const secure = Array.from(randomValues)
+  .map(v => charset[v % charset.length])
+  .join('');
+```
+
+**Why This Matters**:
+
+- `Math.random()` is predictable and can be exploited
+- `crypto.getRandomValues()` uses OS-level entropy
+- PKCE security depends on unpredictable code_verifier
+- State parameters must be unguessable for CSRF protection
+
+### 3. Base64URL Encoding for OAuth Parameters
+
+**Learning**: Standard Base64 encoding is not URL-safe
+**Solution**: Use Base64URL encoding (RFC 4648 Section 5)
+
+**Implementation**:
+
+```typescript
+// Convert standard Base64 to Base64URL
+return btoa(binary)
+  .replace(/\+/g, '-') // Replace + with -
+  .replace(/\//g, '_') // Replace / with _
+  .replace(/=/g, ''); // Remove padding
+```
+
+**Why This Matters**:
+
+- Standard Base64 uses `+` and `/` which are special in URLs
+- Padding `=` can cause issues in query parameters
+- Base64URL is URL-safe without encoding
+- Required by RFC 7636 for PKCE
+
+### 4. RFC 7636 Compliance Requirements
+
+**Learning**: PKCE has specific requirements for compliance
+**Requirements**:
+
+- **code_verifier length**: 43-128 characters
+- **Character set**: `[A-Za-z0-9-._~]` (unreserved characters only)
+- **Challenge method**: S256 (SHA-256) recommended, plain text discouraged
+- **Encoding**: Base64URL without padding
+
+**Validation**:
+
+```typescript
+function validateCodeVerifier(verifier: string): boolean {
+  // Check length
+  if (verifier.length < 43 || verifier.length > 128) {
+    return false;
+  }
+  // Check character set
+  const allowedChars = /^[A-Za-z0-9\-._~]+$/;
+  return allowedChars.test(verifier);
+}
+```
+
+### 5. PKCE Storage Security
+
+**Learning**: PKCE parameters should be stored temporarily and securely
+**Implementation**:
+
+- **code_verifier**: Store in sessionStorage (cleared after use)
+- **state**: Store in sessionStorage for CSRF validation
+- **Never in localStorage**: Persists across sessions (security risk)
+- **Clear after use**: Remove from storage after token exchange
+
+**Security Pattern**:
+
+```typescript
+// Store temporarily
+sessionStorage.setItem('code_verifier', codeVerifier);
+sessionStorage.setItem('oauth_state', state);
+
+// Use and clear immediately
+const storedVerifier = sessionStorage.getItem('code_verifier');
+sessionStorage.removeItem('code_verifier');
+sessionStorage.removeItem('oauth_state');
+```
+
+### 6. PKCE vs Client Secret
+
+**Learning**: Understanding when to use each approach
+
+**Backend-Proxied OAuth (Client Secret)**:
+
+- ✅ Highest security (secret never exposed to client)
+- ✅ Enables HTTP-only cookies (XSS protection)
+- ✅ Server-side token validation
+- ❌ Requires backend infrastructure
+- ❌ More complex architecture
+
+**PKCE (Public Clients)**:
+
+- ✅ No backend required (pure SPA)
+- ✅ No client secret to manage
+- ✅ OAuth 2.1 compliant
+- ✅ Simpler architecture
+- ❌ Tokens stored in browser (consider storage carefully)
+- ✅ Recommended by OAuth Security BCP for SPAs
+
+**Decision Criteria**:
+
+- Have backend? Use client secret + HTTP-only cookies
+- Pure SPA/Mobile? Use PKCE
+- Need highest security? Backend-proxied OAuth
+- Serverless architecture? PKCE
+
 ## OAuth Implementation Learnings
 
 ### 1. Audience Claims in OAuth Tokens
@@ -188,3 +336,68 @@ const storedToken = refreshTokens.get(tokenHash);
 **Error**: Missing audience validation in OAuth tokens
 **Solution**: Added proper `aud` claims and validation
 **Security Benefit**: Prevents token misuse across services
+
+### 4. PKCE Implementation Challenges
+
+**Challenge**: Implementing RFC 7636 compliant PKCE from scratch
+**Solution**: Created dedicated PKCE utilities module with proper validation
+**Files Created**:
+
+- `frontend-standalone/src/utils/pkce.ts` - Client-side PKCE
+- `oauth-server/src/utils/crypto.utils.ts` - Server-side verification
+
+**Key Learnings**:
+
+- SHA-256 hashing requires proper ArrayBuffer handling
+- Base64URL encoding is different from standard Base64
+- Character set validation prevents subtle bugs
+- Cryptographic random generation is critical
+- Testing PKCE flow requires end-to-end integration tests
+
+### 5. OAuth Server PKCE Support
+
+**Implementation**: Added PKCE support to existing OAuth server
+**Changes**:
+
+- `AuthorizationCode` entity extended with PKCE fields
+- Token endpoint validates code_verifier against code_challenge
+- Proper error handling for PKCE validation failures
+
+**Verification Algorithm**:
+
+```typescript
+function verifyChallengeVerifier(codeVerifier: string, codeChallenge: string, method: 'S256' | 'plain'): boolean {
+  if (method === 'S256') {
+    const computedChallenge = computeCodeChallenge(codeVerifier);
+    return computedChallenge === codeChallenge;
+  }
+  return codeVerifier === codeChallenge;
+}
+```
+
+## Production Readiness Learnings
+
+### 1. Dual OAuth Approach Benefits
+
+**Learning**: Having both backend-proxied and PKCE flows provides educational value
+
+**Benefits**:
+
+- Compare security tradeoffs
+- Understand architecture differences
+- Demonstrate OAuth 2.0 and OAuth 2.1 compliance
+- Show evolution of OAuth security best practices
+
+### 2. Testing PKCE Flows
+
+**Learning**: PKCE requires specific integration test patterns
+
+**Test Coverage**:
+
+- PKCE parameter generation validation
+- Code challenge computation verification
+- Server-side PKCE verification
+- Complete end-to-end OAuth flow
+- Security test cases (invalid verifier, missing parameters)
+
+**Implementation**: Created `frontend-standalone-pkce.spec.ts` with 8 test scenarios

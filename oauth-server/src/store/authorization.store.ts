@@ -7,6 +7,8 @@ export type AuthorizationCode = {
   provider: OAuthProvider;
   expiresAt: number;
   nonce: string;
+  codeChallenge?: string;
+  codeChallengeMethod?: 'S256' | 'plain';
 };
 
 const store = new Map<string, AuthorizationCode>();

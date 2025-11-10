@@ -12,18 +12,28 @@ Tech stack, folder structure, testing frameworks.
 - **Testing**: Jest 30 for unit testing
 - **Linting**: ESLint 9 with flat config and TypeScript support
 
-### Frontend
+### Frontend (Main App)
 
 - **Framework**: React 19 with TypeScript
 - **Build Tool**: Vite for fast development and building
 - **Styling**: Tailwind CSS 3 for utility-first styling
 - **HTTP Client**: Fetch API with custom interceptors
+- **Authentication**: Backend-proxied OAuth flow with JWT tokens
+
+### Frontend Standalone (PKCE Demo)
+
+- **Framework**: React 19 with TypeScript
+- **Build Tool**: Vite for fast development and building
+- **Pattern**: Pure SPA with Authorization Code + PKCE flow
+- **Authentication**: Direct OAuth with PKCE (no backend required)
+- **Security**: Web Crypto API for cryptographically secure PKCE
 
 ### OAuth Server
 
 - **Purpose**: Mock OAuth provider for demonstration
 - **Implementation**: Express server with EJS templating
 - **Providers**: Google, Microsoft, Strava, Company (mock implementations)
+- **PKCE Support**: Full RFC 7636 implementation with SHA-256 verification
 
 ### Integration Testing
 
@@ -233,9 +243,99 @@ sequenceDiagram
     Server->>Client: Return new access token
 ```
 
+### PKCE Authentication Flow (Frontend-Standalone)
+
+The frontend-standalone application implements OAuth 2.0 Authorization Code + PKCE (Proof Key for Code Exchange) flow, which is the recommended approach for Single-Page Applications (SPAs) and public clients.
+
+**PKCE Overview:**
+
+PKCE prevents authorization code interception attacks by creating a cryptographic link between the authorization request and token request:
+
+1. Client generates random `code_verifier` (128 characters)
+2. Client creates `code_challenge = SHA256(code_verifier)` + Base64URL encoding
+3. Client sends `code_challenge` to authorization server
+4. Authorization server stores `code_challenge` with the authorization code
+5. Client exchanges code + `code_verifier` for tokens
+6. Server verifies: `SHA256(code_verifier) === stored code_challenge`
+
+Even if an attacker intercepts the authorization code, they cannot exchange it without the `code_verifier`.
+
+```mermaid
+sequenceDiagram
+    participant Client as Frontend SPA
+    participant OAuthProvider
+    participant Storage as SessionStorage
+
+    Note over Client: User clicks "Sign in with Provider"
+    Client->>Client: Generate state (CSRF protection)
+    Client->>Client: Generate code_verifier (128 chars)
+    Client->>Client: Generate code_challenge = SHA256(verifier)
+    Client->>Storage: Store state + code_verifier
+
+    Client->>OAuthProvider: Redirect to /authorize<br/>code_challenge, state
+    Note over OAuthProvider: User authenticates
+    OAuthProvider->>OAuthProvider: Store code_challenge
+    OAuthProvider->>Client: Redirect with code + state
+
+    Note over Client: Verify state matches
+    Client->>Storage: Retrieve code_verifier
+    Client->>OAuthProvider: POST /token<br/>code + code_verifier
+    Note over OAuthProvider: Verify SHA256(code_verifier)<br/>matches code_challenge
+    OAuthProvider->>Client: Return access_token + id_token
+
+    Client->>OAuthProvider: GET /userinfo<br/>with access_token
+    OAuthProvider->>Client: Return user profile
+
+    Note over Client: User authenticated
+    Client->>Storage: Clear PKCE parameters
+```
+
+**PKCE Security Features:**
+
+- **RFC 7636 Compliant**: Full implementation of PKCE specification
+- **Cryptographically Secure**: Uses Web Crypto API (`crypto.getRandomValues()`)
+- **SHA-256 Hashing**: S256 method (not plain text)
+- **Base64URL Encoding**: URL-safe encoding without padding
+- **State Parameter**: CSRF protection with secure random generation
+- **No Client Secret**: Safe for public clients (SPAs, mobile apps)
+- **Single-Use Codes**: Authorization codes are invalidated after use
+
+**Comparison: Main App vs Standalone App OAuth Flows**
+
+| Aspect                   | Main App (Backend-Proxied)                    | Standalone App (PKCE)                     |
+| ------------------------ | --------------------------------------------- | ----------------------------------------- |
+| **Port**                 | 3000 (frontend) + 3001 (backend)              | 3003 (frontend only)                      |
+| **OAuth Flow**           | Authorization Code via backend proxy          | Authorization Code + PKCE (direct)        |
+| **Backend Required**     | Yes (Node.js API server)                      | No (pure SPA)                             |
+| **Client Secret**        | Used (stored on backend)                      | Not needed (PKCE replaces it)             |
+| **Token Exchange**       | Backend exchanges code for tokens             | Frontend exchanges code + verifier        |
+| **Security Mechanism**   | Client secret + HTTP-only cookies             | PKCE + state parameter                    |
+| **Recommended For**      | Apps with backend infrastructure              | SPAs, mobile apps, serverless             |
+| **Production Use**       | ✅ Highest security (httpOnly cookies)        | ✅ Approved (OAuth 2.0 Security BCP)      |
+| **Token Storage**        | HTTP-only cookies (XSS-proof)                 | Memory (session) or sessionStorage        |
+| **Additional Features**  | Token blacklisting, device tracking, sessions | Educational PKCE demo                     |
+| **OAuth 2.1 Compliance** | ✅ Yes                                        | ✅ Yes (PKCE required for public clients) |
+
+**When to Use Each Approach:**
+
+- **Main App (Backend-Proxied)**:
+  - You have a backend server
+  - Need highest security (httpOnly cookies)
+  - Want server-side token validation
+  - Need device tracking and session management
+
+- **Standalone App (PKCE)**:
+  - Building a pure SPA without backend
+  - Serverless architecture
+  - Mobile application
+  - Educational/demo purposes
+  - Following OAuth 2.1 best practices for public clients
+
 ## Security Features
 
 ### OAuth Security Features
+
+**Main App (Backend-Proxied OAuth):**
 
 - State parameter for CSRF protection
 - Nonce in ID token for replay attack prevention
@@ -244,6 +344,16 @@ sequenceDiagram
 - Secure token transmission
 - Provider-specific client validation
 - Automatic cleanup of expired authorization codes
+
+**Standalone App (PKCE OAuth):**
+
+- PKCE (RFC 7636) prevents authorization code interception
+- Cryptographically secure code_verifier generation
+- SHA-256 hashing for code_challenge
+- State parameter for CSRF protection
+- No client secret needed (safe for public clients)
+- Single-use authorization codes
+- Base64URL encoding for URL safety
 
 ### General Security Measures
 
@@ -303,9 +413,10 @@ All JWT tokens include enhanced claims for improved security:
 This is a comprehensive JWT authentication demo featuring a multi-service architecture:
 
 - **Backend (port 3001)**: Node.js/Express API server with JWT authentication
-- **Frontend (port 5173)**: React/Vite SPA with TypeScript
+- **Frontend (port 3000)**: React/Vite SPA with TypeScript - backend-proxied OAuth
+- **Frontend Standalone (port 3003)**: React/Vite SPA - pure PKCE implementation
 - **OAuth Server (port 3002)**: Fake OAuth server for testing OAuth flows
-- **Integration Tests**: Playwright-based E2E tests
+- **Integration Tests**: Playwright-based E2E tests for both OAuth approaches
 
 ### Directory Structure
 
@@ -335,7 +446,7 @@ This is a comprehensive JWT authentication demo featuring a multi-service archit
 │   ├── .env                  # Environment variables
 │   └── package.json          # Backend dependencies
 │
-├── frontend/                  # React Frontend Application
+├── frontend/                  # React Frontend Application (Main App)
 │   ├── src/
 │   │   ├── api/              # API client and services
 │   │   │   ├── client.js     # Axios configuration
@@ -369,20 +480,31 @@ This is a comprehensive JWT authentication demo featuring a multi-service archit
 │   ├── index.html            # HTML template
 │   └── package.json          # Frontend dependencies
 │
+├── frontend-standalone/       # Frontend Standalone (PKCE Demo)
+│   ├── src/
+│   │   ├── utils/            # PKCE utilities
+│   │   │   └── pkce.ts       # RFC 7636 PKCE implementation
+│   │   ├── App.tsx           # Main app with PKCE flow
+│   │   └── main.tsx          # Application entry point
+│   ├── index.html            # HTML template
+│   ├── README.md             # Standalone app documentation
+│   └── package.json          # Dependencies
+│
 ├── oauth-server/              # Fake OAuth Server for Testing
 │   ├── src/
 │   │   ├── routes/           # OAuth route handlers
-│   │   │   ├── authorize.js  # Authorization endpoints
-│   │   │   ├── token.js      # Token exchange
+│   │   │   ├── authorize.js  # Authorization endpoints (PKCE support)
+│   │   │   ├── token.js      # Token exchange (PKCE verification)
 │   │   │   └── userinfo.js   # User information
 │   │   ├── config/           # OAuth configuration
 │   │   │   ├── providers.js  # Provider configurations
 │   │   │   └── clients.js    # Client registrations
 │   │   ├── stores/           # OAuth data stores
-│   │   │   ├── authorizationCodes.js # Authorization codes
+│   │   │   ├── authorizationCodes.js # Authorization codes (with PKCE)
 │   │   │   └── tokens.js             # OAuth tokens
 │   │   ├── utils/            # OAuth utilities
 │   │   │   ├── jwt.js        # JWT creation for OAuth
+│   │   │   ├── crypto.js     # PKCE verification utilities
 │   │   │   └── providers.js  # Provider-specific logic
 │   │   └── server.js         # OAuth server setup
 │   ├── views/                # HTML templates
@@ -392,21 +514,27 @@ This is a comprehensive JWT authentication demo featuring a multi-service archit
 │
 ├── integration-tests/         # End-to-End Tests
 │   ├── tests/                # Playwright test files
-│   │   ├── auth.spec.js      # Authentication tests
-│   │   ├── oauth.spec.js     # OAuth flow tests
-│   │   └── sessions.spec.js  # Session management tests
-│   ├── fixtures/             # Test fixtures
-│   ├── playwright.config.js  # Playwright configuration
+│   │   ├── oauth-flow.spec.ts              # Main app OAuth tests
+│   │   ├── frontend-standalone-pkce.spec.ts # Standalone PKCE tests
+│   │   ├── password-login-token-invalidation.spec.ts
+│   │   └── utils/            # Test utilities
+│   │       ├── test-helpers.ts           # Main app helpers
+│   │       └── standalone-test-helpers.ts # Standalone helpers
+│   ├── playwright.config.ts  # Playwright configuration
+│   ├── test-standalone.sh    # Standalone test runner
+│   ├── README.md             # Main app tests documentation
+│   ├── README-standalone.md  # Standalone tests documentation
 │   └── package.json          # Test dependencies
 │
 ├── docs/                      # Documentation
 │   ├── description.md        # App description and features
-│   ├── architecture.md       # Technical architecture
+│   ├── architecture.md       # Technical architecture (this file)
 │   ├── datamodel.md         # Data model and relationships
 │   ├── frontend.md          # Frontend implementation
 │   ├── backend.md           # Backend implementation
 │   ├── debugging.md         # Debugging guide
-│   ├── integration-tests.md # Integration testing guide
+│   ├── testing.md           # Testing guide and strategy
+│   ├── pkce-validation-report.md # PKCE security validation
 │   ├── todo.md              # Project tasks and status
 │   ├── ai_changelog.md      # AI-generated changes log
 │   └── learnings.md         # Technical learnings
@@ -439,8 +567,9 @@ This is a comprehensive JWT authentication demo featuring a multi-service archit
    npm run dev
    ```
 
-3. **Access Application**
-   - Frontend: http://localhost:5173
+3. **Access Applications**
+   - Main Frontend: http://localhost:3000
+   - Standalone Frontend: http://localhost:3003 (PKCE demo)
    - Backend API: http://localhost:3001/api
    - OAuth Server: http://localhost:3002
 
@@ -456,7 +585,7 @@ npm run build      # TypeScript compilation
 npm run start      # Production mode
 ```
 
-#### Frontend Setup
+#### Frontend Setup (Main App)
 
 ```bash
 cd frontend
@@ -465,6 +594,18 @@ npm run dev        # Vite development server
 npm run build      # Production build
 npm run preview    # Preview production build
 ```
+
+#### Frontend Standalone Setup (PKCE Demo)
+
+```bash
+cd frontend-standalone
+npm install
+npm run dev        # Vite development server (port 3003)
+npm run build      # Production build
+npm run lint       # ESLint check
+```
+
+**Note**: The standalone app requires only the OAuth server to be running, not the backend.
 
 #### OAuth Server Setup
 

@@ -11,6 +11,16 @@ router.get('/userinfo', (req, res) => {
   // debugger; // OAUTH SERVER: User Info Request - Main app requesting user profile with access token
   // We received: Authorization header with Bearer token
   // Next: Validate token and return user profile information
+
+  // Special handling for SSO demo app (X-Provider header)
+  // In production with PKCE, the SPA would send an access_token in Authorization header
+  const demoProvider = req.headers['x-provider'] as OAuthProvider;
+  if (demoProvider && mockUsers[demoProvider]) {
+    // Return user info for demo purposes without requiring access token
+    console.log(`[Demo Mode] Returning user info for provider: ${demoProvider}`);
+    return res.json(mockUsers[demoProvider]);
+  }
+
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'invalid_token' });

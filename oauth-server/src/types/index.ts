@@ -15,6 +15,8 @@ export type OAuthAuthorizationRequest = {
   state: string;
   nonce: string;
   provider: OAuthProvider;
+  code_challenge?: string;
+  code_challenge_method?: 'S256' | 'plain';
 };
 
 export type OAuthTokenRequest = {
@@ -22,8 +24,9 @@ export type OAuthTokenRequest = {
   code: string;
   redirect_uri: string;
   client_id: string;
-  client_secret: string;
+  client_secret?: string;
   provider: OAuthProvider;
+  code_verifier?: string;
 };
 
 export type OAuthTokenResponse = {

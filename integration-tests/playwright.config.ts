@@ -36,6 +36,14 @@ export default defineConfig({
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
+    {
+      name: 'frontend-standalone',
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:3003',
+      },
+      testMatch: '**/frontend-standalone-*.spec.ts',
+    },
   ],
 
   /* Run your local dev server before starting the tests */
@@ -55,6 +63,12 @@ export default defineConfig({
     {
       command: 'cd ../frontend && npm run dev',
       port: 3000,
+      reuseExistingServer: !process.env.CI,
+      timeout: 30000,
+    },
+    {
+      command: 'cd ../frontend-standalone && npm run dev',
+      port: 3003,
       reuseExistingServer: !process.env.CI,
       timeout: 30000,
     },

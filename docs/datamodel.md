@@ -98,6 +98,44 @@ interface JwtPayload {
 
 ## OAuth Entities
 
+### AuthorizationCode (with PKCE Support)
+
+**Purpose**: Stores authorization codes with PKCE parameters for OAuth flows
+**Storage**: In-memory Map (OAuth server)
+
+```typescript
+interface AuthorizationCode {
+  code: string; // Unique authorization code (UUID)
+  clientId: string; // OAuth client identifier
+  redirectUri: string; // Registered redirect URI
+  provider: OAuthProvider; // OAuth provider name
+  expiresAt: number; // Expiration timestamp (10 minutes)
+  nonce: string; // OpenID Connect nonce for replay protection
+  codeChallenge?: string; // PKCE code challenge (SHA-256 hash)
+  codeChallengeMethod?: 'S256' | 'plain'; // PKCE challenge method
+}
+```
+
+**PKCE Flow**:
+
+1. Client generates `code_verifier` (128 characters, cryptographically random)
+2. Client creates `code_challenge = SHA256(code_verifier)` + Base64URL encoding
+3. Server stores `codeChallenge` and `codeChallengeMethod` with authorization code
+4. Client exchanges code + `code_verifier` for tokens
+5. Server verifies: `SHA256(code_verifier) === stored codeChallenge`
+
+**Security**:
+
+- Authorization codes expire in 10 minutes
+- Single-use (deleted after token exchange)
+- PKCE prevents authorization code interception attacks
+- Even if code is stolen, attacker cannot use it without `code_verifier`
+
+**Relationships**:
+
+- Associated with OAuthProvider
+- Referenced during token exchange
+
 ### OAuthUserInfo
 
 **Purpose**: User profile information from OAuth providers
@@ -138,28 +176,6 @@ interface OAuthState {
 - Replay attack mitigation
 - State parameter validation
 
-### AuthorizationCode
-
-**Purpose**: Temporary codes for OAuth token exchange
-**Storage**: In-memory with automatic expiration
-
-```typescript
-interface AuthorizationCode {
-  code: string; // Authorization code
-  userId: string; // Provider user ID
-  provider: OAuthProvider; // OAuth provider
-  redirectUri: string; // Callback URL
-  nonce: string; // Nonce for ID token
-  expiresAt: number; // Code expiration
-}
-```
-
-**Lifecycle**:
-
-1. Generated during OAuth authorization
-2. Exchanged for tokens at callback
-3. Automatically cleaned up after use
-
 ## Security Entities
 
 ### BlacklistedToken
@@ -199,6 +215,59 @@ interface NonceEntry {
 - Prevents OAuth replay attacks
 - Validates ID token nonce claims
 - Automatic cleanup of expired nonces
+
+## PKCE-Specific Data
+
+### PKCE Parameters (Frontend-Standalone)
+
+**Purpose**: Client-side PKCE parameters for secure OAuth flow
+**Storage**: SessionStorage (temporary, cleared after use)
+
+```typescript
+interface PKCEParameters {
+  codeVerifier: string; // Random string (43-128 chars, RFC 7636)
+  codeChallenge: string; // SHA-256(codeVerifier) + Base64URL
+  codeChallengeMethod: 'S256'; // Challenge method (always S256)
+}
+
+interface OAuthParameters extends PKCEParameters {
+  state: string; // CSRF protection parameter
+}
+```
+
+**Generation Requirements (RFC 7636)**:
+
+- `code_verifier`: 43-128 characters, unreserved characters `[A-Za-z0-9-._~]`
+- Must use cryptographically secure random generation (`crypto.getRandomValues()`)
+- `code_challenge`: Base64URL(SHA-256(code_verifier))
+- No padding in Base64URL encoding
+
+**Storage Security**:
+
+- Stored in sessionStorage during OAuth flow
+- Automatically cleared after successful token exchange
+- Never transmitted to server until token exchange
+- Proves same client initiated and completed the flow
+
+### PKCE Verification (OAuth Server)
+
+**Purpose**: Server-side PKCE verification utilities
+**Location**: `oauth-server/src/utils/crypto.utils.ts`
+
+```typescript
+// Verify PKCE code_verifier against stored code_challenge
+function verifyChallengeVerifier(codeVerifier: string, codeChallenge: string, method: 'S256' | 'plain'): boolean;
+
+// Compute SHA-256 hash and Base64URL encode
+function computeCodeChallenge(codeVerifier: string): string;
+```
+
+**Verification Process**:
+
+1. Retrieve stored `codeChallenge` and `codeChallengeMethod` from authorization code
+2. Compute challenge from provided `code_verifier`
+3. Compare computed challenge with stored challenge
+4. If match: issue tokens; If mismatch: reject with error
 
 ## Data Relationships
 

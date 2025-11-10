@@ -118,6 +118,54 @@ npm run test:integration:ui
 
 Interactive test runner with timeline, screenshots, and network logs.
 
+## Frontend Standalone PKCE Tests
+
+The frontend-standalone application has dedicated Playwright tests that focus on the PKCE OAuth flow without requiring the main backend.
+
+### Running Frontend Standalone Tests
+
+#### Standard Mode
+
+```bash
+npm run test:standalone
+```
+
+Runs PKCE flow tests for the frontend-standalone application.
+
+#### Debug Mode
+
+```bash
+npm run test:standalone:debug
+```
+
+Step through PKCE tests with debugger.
+
+#### Headed Mode
+
+```bash
+npm run test:standalone:headed
+```
+
+Run PKCE tests with visible browser.
+
+#### UI Mode
+
+```bash
+npm run test:standalone:ui
+```
+
+Interactive test runner for frontend-standalone tests.
+
+### Frontend Standalone Test Coverage
+
+The frontend-standalone tests cover:
+
+- **PKCE OAuth Flow**: Complete Authorization Code + PKCE flow
+- **Multiple Providers**: Google, Microsoft, Strava, Company SSO
+- **Security Validation**: PKCE parameter verification, state validation
+- **Error Handling**: Authorization denial, invalid requests
+- **RFC 7636 Compliance**: Code verifier/challenge format validation
+
 ## Architecture
 
 The test coordinates three services:

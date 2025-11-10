@@ -89,13 +89,24 @@ export default [
         window: 'readonly',
         document: 'readonly',
         fetch: 'readonly',
+        URL: 'readonly',
+        URLSearchParams: 'readonly',
       },
     },
   },
 
-  // Frontend files (all JS/TS in frontend)
+  // Frontend files (all JS/TS in frontend and frontend-standalone)
   {
-    files: ['frontend/src/**/*.js', 'frontend/src/**/*.jsx', 'frontend/src/**/*.ts', 'frontend/src/**/*.tsx'],
+    files: [
+      'frontend/src/**/*.js',
+      'frontend/src/**/*.jsx',
+      'frontend/src/**/*.ts',
+      'frontend/src/**/*.tsx',
+      'frontend-standalone/src/**/*.js',
+      'frontend-standalone/src/**/*.jsx',
+      'frontend-standalone/src/**/*.ts',
+      'frontend-standalone/src/**/*.tsx',
+    ],
     languageOptions: {
       globals: {
         window: 'readonly',
@@ -110,13 +121,20 @@ export default [
         clearTimeout: 'readonly',
         NodeJS: 'readonly',
         crypto: 'readonly',
+        URL: 'readonly',
+        URLSearchParams: 'readonly',
       },
     },
   },
 
-  // React JSX/TSX files (frontend only)
+  // React JSX/TSX files (frontend and frontend-standalone)
   {
-    files: ['frontend/src/**/*.jsx', 'frontend/src/**/*.tsx'],
+    files: [
+      'frontend/src/**/*.jsx',
+      'frontend/src/**/*.tsx',
+      'frontend-standalone/src/**/*.jsx',
+      'frontend-standalone/src/**/*.tsx',
+    ],
     languageOptions: {
       parser: tsParser,
       parserOptions: {
@@ -137,6 +155,9 @@ export default [
         clearInterval: 'readonly',
         setTimeout: 'readonly',
         clearTimeout: 'readonly',
+        crypto: 'readonly',
+        URL: 'readonly',
+        URLSearchParams: 'readonly',
       },
     },
     plugins: {

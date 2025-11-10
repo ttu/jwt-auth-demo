@@ -10,9 +10,19 @@ const router = express.Router();
 router.get('/authorize', (req, res) => {
   // debugger; // OAUTH SERVER: Authorization Request - User redirected here from main app
   // We received: response_type, client_id, redirect_uri, scope, state, nonce, provider
+  // PKCE: code_challenge, code_challenge_method (optional, for public clients)
   // Next: Validate request parameters and show authorization consent page
-  const { response_type, client_id, redirect_uri, scope, state, nonce, provider } =
-    req.query as unknown as OAuthAuthorizationRequest;
+  const {
+    response_type,
+    client_id,
+    redirect_uri,
+    scope,
+    state,
+    nonce,
+    provider,
+    code_challenge,
+    code_challenge_method,
+  } = req.query as unknown as OAuthAuthorizationRequest;
 
   console.log('Authorization request:', {
     response_type,
@@ -22,6 +32,8 @@ router.get('/authorize', (req, res) => {
     state,
     nonce,
     provider,
+    code_challenge: code_challenge ? `${code_challenge.substring(0, 20)}...` : undefined,
+    code_challenge_method,
     query: req.query,
     headers: req.headers,
   });
@@ -49,24 +61,33 @@ router.get('/authorize', (req, res) => {
   }
 
   // Check if the redirect URI matches the configured pattern
-  const expectedPattern = new RegExp(`^http://localhost:3001/api/auth/callback/${provider}$`);
+  // Support both main app (3001) and frontend-standalone (3003) redirect URIs
+  const mainAppPattern = new RegExp(`^http://localhost:3001/api/auth/callback/${provider}$`);
+  const standaloneAppPattern = new RegExp(`^http://localhost:3003/callback$`);
+
+  const isMainApp = mainAppPattern.test(redirect_uri);
+  const isStandaloneApp = standaloneAppPattern.test(redirect_uri);
+
   console.log('Checking redirect URI:', {
     received: redirect_uri,
-    expectedPattern: expectedPattern.toString(),
-    matches: expectedPattern.test(redirect_uri),
+    mainAppPattern: mainAppPattern.toString(),
+    standaloneAppPattern: standaloneAppPattern.toString(),
+    isMainApp,
+    isStandaloneApp,
     providerConfig: {
       redirectUri: providerConfig.redirectUri,
       clientId: providerConfig.clientId,
     },
   });
 
-  if (!expectedPattern.test(redirect_uri)) {
+  if (!isMainApp && !isStandaloneApp) {
     return res.status(400).json({ error: 'invalid_request', error_description: 'Invalid redirect_uri' });
   }
 
   // debugger; // OAUTH SERVER: Consent Page Display - All validation passed, showing user consent form
   // We're rendering the authorization page where user will grant/deny permission
   // Page contains: provider info, requested scopes, approve/deny buttons
+  // PKCE: If code_challenge is present, it will be stored with the authorization code
   res.render('authorize', {
     provider,
     scope,
@@ -75,6 +96,8 @@ router.get('/authorize', (req, res) => {
     client_id,
     state,
     nonce,
+    code_challenge,
+    code_challenge_method,
   });
 });
 
@@ -82,8 +105,19 @@ router.get('/authorize', (req, res) => {
 router.post('/authorize/confirm', (req, res) => {
   // debugger; // OAUTH SERVER: User Consent - User clicked 'Approve' on consent page
   // We received: user's decision to grant access, now generating authorization code
+  // PKCE: code_challenge and code_challenge_method will be stored with the auth code
   // Next: Create authorization code and redirect back to main application
-  const { response_type, client_id, redirect_uri, scope, state, nonce, provider } = req.body;
+  const {
+    response_type,
+    client_id,
+    redirect_uri,
+    scope,
+    state,
+    nonce,
+    provider,
+    code_challenge,
+    code_challenge_method,
+  } = req.body;
 
   console.log('Authorization confirmation request:', {
     response_type,
@@ -93,6 +127,8 @@ router.post('/authorize/confirm', (req, res) => {
     state,
     nonce,
     provider,
+    code_challenge: code_challenge ? `${code_challenge.substring(0, 20)}...` : undefined,
+    code_challenge_method,
     body: req.body,
     headers: req.headers,
   });
@@ -104,14 +140,22 @@ router.post('/authorize/confirm', (req, res) => {
   }
 
   // Check if the redirect URI matches the configured pattern
-  const expectedPattern = new RegExp(`^http://localhost:3001/api/auth/callback/${provider}$`);
+  // Support both main app (3001) and frontend-standalone (3003) redirect URIs
+  const mainAppPattern = new RegExp(`^http://localhost:3001/api/auth/callback/${provider}$`);
+  const standaloneAppPattern = new RegExp(`^http://localhost:3003/callback$`);
+
+  const isMainApp = mainAppPattern.test(redirect_uri);
+  const isStandaloneApp = standaloneAppPattern.test(redirect_uri);
+
   console.log('Checking redirect URI:', {
     received: redirect_uri,
-    expectedPattern: expectedPattern.toString(),
-    matches: expectedPattern.test(redirect_uri),
+    mainAppPattern: mainAppPattern.toString(),
+    standaloneAppPattern: standaloneAppPattern.toString(),
+    isMainApp,
+    isStandaloneApp,
   });
 
-  if (!expectedPattern.test(redirect_uri)) {
+  if (!isMainApp && !isStandaloneApp) {
     return res.status(400).json({ error: 'invalid_request', error_description: 'Invalid redirect_uri' });
   }
 
@@ -119,6 +163,7 @@ router.post('/authorize/confirm', (req, res) => {
     // debugger; // OAUTH SERVER: Authorization Code Generation - Creating short-lived auth code
     // We're generating: unique authorization code, expiration time (10 minutes)
     // This code will be exchanged for tokens by the main application
+    // PKCE: Storing code_challenge with the auth code for later verification
     const code = uuidv4();
     const expiresAt = Date.now() + 600000; // 10 minutes
 
@@ -129,6 +174,8 @@ router.post('/authorize/confirm', (req, res) => {
       provider,
       expiresAt,
       nonce,
+      codeChallenge: code_challenge,
+      codeChallengeMethod: code_challenge_method,
     });
 
     // debugger; // OAUTH SERVER: Redirect with Code - Sending user back to main app with authorization code

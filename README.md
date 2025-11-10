@@ -32,11 +32,15 @@ asdf install
 # Install all dependencies
 npm run install:all
 
-# Start all services (frontend, backend, oauth-server)
+# Start ALL services (frontend, frontend-standalone, backend, oauth-server)
 npm run dev
+
 ```
 
-Access: http://localhost:3000 | Login: `demo` / `password123`
+**Access:**
+
+- Main App: http://localhost:3000 | Login: `demo` / `password123`
+- Standalone App: http://localhost:3003 | OAuth providers available
 
 ## 🐛 Exploring with VS Code Debugger (Recommended)
 
@@ -56,6 +60,48 @@ Start debugging by pressing **F5** or using VS Code's debug panel:
 - Choose any login method and learn through breakpoints in documented code
 
 See [debugging guide](docs/debugging.md) for comprehensive debugging instructions.
+
+## 🛠️ Development Scripts
+
+### Project-Wide Commands
+
+```bash
+# Development
+npm run dev                    # Start ALL services (main + standalone apps)
+npm run dev:standalone         # Start standalone app + OAuth server only
+
+# Building
+npm run build                  # Build ALL services (main + standalone apps)
+npm run build:frontend-standalone  # Build standalone app only
+
+# Code Quality
+npm run format:all             # Format all code
+npm run lint:all               # Lint all code
+npm run audit:all              # Security audit all packages
+
+# Testing
+npm run test:unit              # Run unit tests
+npm run test:integration       # Run integration tests (main app)
+npm run test:standalone        # Run standalone app tests
+
+# Utilities
+npm run install:all            # Install all dependencies
+npm run clean                  # Clean all node_modules
+```
+
+### Individual Package Commands
+
+Each package (frontend, frontend-standalone, backend, oauth-server) has its own scripts:
+
+```bash
+# Example for frontend-standalone
+cd frontend-standalone
+npm run dev                    # Start development server
+npm run build                  # Build for production
+npm run format                 # Format code
+npm run lint                   # Lint code
+npm run type-check             # TypeScript type checking
+```
 
 ## 📚 Documentation
 
