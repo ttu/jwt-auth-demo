@@ -401,3 +401,232 @@ function verifyChallengeVerifier(codeVerifier: string, codeChallenge: string, me
 - Security test cases (invalid verifier, missing parameters)
 
 **Implementation**: Created `frontend-standalone-pkce.spec.ts` with 8 test scenarios
+
+## SSO Implementation Learnings
+
+### 1. Consistency with Backend Patterns
+
+**Learning**: Following existing backend patterns creates a maintainable, predictable codebase
+
+**Applied Patterns from Backend**:
+
+```typescript
+// Backend: refreshToken.store.ts
+- SHA-256 hashed token storage
+- In-memory Map with explicit types
+- Simple function exports (no classes)
+- Expiration and revocation flags
+- Cleanup via separate service
+- Minimal logging (no spam)
+
+// OAuth Server: sso-session.store.ts
+- SHA-256 hashed session IDs (same defense-in-depth)
+- In-memory Map with explicit types
+- Simple function exports (matching backend style)
+- Expiration and revocation flags
+- Cleanup via separate service
+- Minimal logging (following backend)
+```
+
+**Benefits**:
+
+- Developers familiar with backend can immediately understand OAuth server
+- Consistent security approach across services
+- Easier to maintain and debug
+- Predictable patterns reduce cognitive load
+
+### 2. SSO Session Management
+
+**Learning**: Provider-specific SSO sessions enable true single sign-on experience
+
+**Implementation**:
+
+```typescript
+interface SSOSession {
+  id: string; // SHA-256 hashed UUID
+  userId: string; // From OAuth provider
+  provider: OAuthProvider; // Provider isolation
+  createdAt: Date;
+  lastUsedAt: Date;
+  expiresAt: Date; // Configurable expiry (default: 24 hours)
+  isRevoked: boolean;
+}
+```
+
+**Key Decisions**:
+
+1. **Provider Isolation**: Each provider (Google, Microsoft, Strava, Company) has separate sessions
+   - Prevents cross-provider authorization leakage
+   - User controls each provider independently
+   - More secure and predictable
+
+2. **Configurable Expiry**: Balances security and UX (default: 24 hours)
+   - Long enough for typical multi-application workflows
+   - Short enough to limit exposure if compromised
+   - Auto-cleanup prevents session bloat
+   - Configurable via `SSO_SESSION_EXPIRY` environment variable
+
+3. **Cross-Application SSO**: Works across main app and frontend-standalone
+   - Single authorization applies to both apps
+   - Demonstrates real SSO value
+   - Tests enterprise-style SSO scenarios
+
+### 3. Cookie Management for SSO
+
+**Learning**: Cookie configuration must balance security, scope, and functionality
+
+**Implementation**:
+
+```typescript
+res.cookie('oauth_sso_session', sessionId, {
+  httpOnly: false, // Demo: false, Production: true
+  secure: config.server.nodeEnv === 'production',
+  sameSite: 'strict', // CSRF protection
+  maxAge: config.sso.sessionExpiry * 1000, // Configurable (default: 24 hours)
+  path: '/oauth', // Limit cookie scope
+});
+```
+
+**Design Choices**:
+
+1. **Path Restriction**: `/oauth` limits cookie to OAuth endpoints
+   - Reduces attack surface
+   - Prevents unintended exposure
+   - Follows least privilege principle
+
+2. **SameSite=strict**: Strong CSRF protection
+   - Only sent with same-site requests
+   - Prevents cross-site authorization attacks
+   - Standard for authentication cookies
+
+3. **HTTP-Only in Production**: Prevents XSS access
+   - Demo: `false` for easier debugging
+   - Production: `true` for security
+   - Documented difference aids learning
+
+### 4. Automatic Cleanup Services
+
+**Learning**: Cleanup services prevent data bloat and maintain performance
+
+**Backend Pattern**:
+
+```typescript
+// backend/src/services/tokenCleanup.ts
+- Single interval for all cleanup
+- Runs every hour (3600000ms)
+- Silent execution (no spam logs)
+- Cleans: expired refresh tokens, blacklisted tokens, nonces
+```
+
+**OAuth Server Pattern**:
+
+```typescript
+// oauth-server/src/services/ssoCleanup.ts
+- Single interval for SSO cleanup
+- Runs every 5 minutes (300000ms)
+- Silent execution (following backend)
+- Cleans: expired SSO sessions, expired authorization codes
+```
+
+**Why Different Intervals**:
+
+- Backend refresh tokens: 7-day expiry → hourly cleanup sufficient
+- SSO sessions: Configurable expiry (default: 24 hours) → 5-minute cleanup for faster response
+- Authorization codes: 10-minute expiry → cleanup with SSO sessions
+
+### 5. SHA-256 Hashing for Session IDs
+
+**Learning**: Hash session IDs before storage for defense-in-depth
+
+**Why Hash Session IDs**:
+
+```typescript
+// Raw session ID in cookie (UUID)
+const sessionId = generateSessionId(); // UUID v4
+res.cookie('oauth_sso_session', sessionId); // Raw UUID sent to client
+
+// Hashed before storage
+const hashSessionId = (sessionId: string): string => {
+  return createHash('sha256').update(sessionId).digest('hex');
+};
+const hashedSessionId = hashSessionId(sessionId);
+ssoSessions.set(hashedSessionId, sessionData);
+```
+
+**Benefits**:
+
+- If in-memory store is compromised, attacker can't use sessions directly
+- Follows same pattern as backend refresh token storage
+- Fast O(1) hash lookup
+- Defense-in-depth security layer
+
+**Real-World Scenario**:
+
+- Memory dump attack (e.g., via vulnerability)
+- Attacker gets hashed session IDs from Map
+- Cannot use hashes to impersonate users
+- Must have raw UUID from client cookie
+
+### 6. Auto-Approval Flow Design
+
+**Learning**: SSO auto-approval must balance UX and security
+
+**Flow**:
+
+```typescript
+// /oauth/authorize endpoint
+1. Check for oauth_sso_session cookie
+2. Validate session (expiration, revocation)
+3. Check provider matches requested provider
+4. If valid: Auto-approve (skip consent page)
+5. If invalid: Show consent page
+```
+
+**Security Considerations**:
+
+1. **Provider Matching**: Only auto-approve for same provider
+   - Prevents cross-provider authorization leakage
+   - User must explicitly authorize each provider
+
+2. **Session Validation**: Check expiration and revocation
+   - Expired sessions don't auto-approve
+   - Revoked sessions don't auto-approve
+   - `lastUsedAt` updated on each use
+
+3. **Error Handling**: Graceful fallback to consent page
+   - If SSO check fails, show normal flow
+   - Prevents errors from blocking authentication
+   - Logged for debugging
+
+**UX Benefits**:
+
+- First authorization: Normal consent page (user sees what's happening)
+- Subsequent: Immediate redirect (seamless experience)
+- Different provider: New consent page (explicit authorization)
+
+### 7. Documentation and Discoverability
+
+**Learning**: Comprehensive documentation makes complex features accessible
+
+**Created Documentation**:
+
+1. **`docs/sso-implementation.md`**: Complete SSO guide
+   - Architecture diagrams
+   - API endpoints
+   - Testing guide
+   - Security considerations
+
+2. **Updated Existing Docs**: Integrated SSO into:
+   - `docs/architecture.md`: SSO architecture section
+   - `docs/datamodel.md`: SSOSession entity
+   - `docs/backend.md`: SSO endpoints
+   - `docs/description.md`: SSO features
+   - `README.md`: SSO in key features
+
+**Best Practices**:
+
+- Diagram the flow (ASCII diagrams in Markdown)
+- Document security decisions
+- Provide manual testing steps
+- Link related documentation
+- Update all relevant docs (not just create new ones)

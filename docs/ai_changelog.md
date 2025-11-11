@@ -2,6 +2,59 @@
 
 Log of changes made by AI. Add concise summaries here.
 
+## 2025-11-11 - Made SSO Session Duration Configurable
+
+**Summary**: Made SSO session expiry configurable via environment variable instead of hardcoded 24 hours.
+
+**Code Changes**:
+
+1. **`oauth-server/src/config/index.ts`**:
+   - Added `sso.sessionExpiry` config (default: 86400 seconds / 24 hours)
+   - Added `server.nodeEnv` config
+   - Configurable via `SSO_SESSION_EXPIRY` environment variable
+
+2. **`oauth-server/src/stores/sso-session.store.ts`**:
+   - Removed hardcoded `SSO_SESSION_EXPIRY` constant
+   - Now uses `config.sso.sessionExpiry`
+
+3. **`oauth-server/src/utils/cookie.utils.ts`**:
+   - Updated to use `config.sso.sessionExpiry` and `config.server.nodeEnv`
+   - Removed import of deleted `SSO_SESSION_EXPIRY` constant
+
+**Documentation Updates**:
+
+- Updated all docs to say "configurable" instead of hardcoded "24-hour"
+- Mentioned `SSO_SESSION_EXPIRY` environment variable where relevant
+- Default value (24 hours) still documented but noted as configurable
+
+**Rationale**: Session duration should be configurable for different environments (e.g., 2 minutes for testing, 24 hours for production).
+
+---
+
+## 2025-11-11 - Documentation Updates for SSO Implementation
+
+**Summary**: Updated all relevant documentation files to reflect the SSO implementation in the OAuth server.
+
+**Documentation Files Updated**:
+
+1. **README.md**: Added SSO to Key Features section
+2. **docs/description.md**: Updated overview, added SSO use case, added to security features
+3. **docs/architecture.md**: Added comprehensive SSO section with architecture diagrams, features, security, endpoints, testing
+4. **docs/datamodel.md**: Added SSOSession entity with lifecycle, security features, relationships
+5. **docs/backend.md**: Added SSO endpoints (`/oauth/session/status`, `/oauth/sessions`, `/oauth/logout`)
+6. **docs/learnings.md**: Added 7 detailed SSO implementation learnings with code examples
+
+**Key Documentation Themes**:
+
+- SSO follows same patterns as backend (SHA-256 hashing, cleanup services)
+- Provider-specific configurable sessions with auto-approval
+- Cross-application SSO (works across main app and frontend-standalone)
+- Comprehensive security documentation (hashing, cookies, isolation, revocation)
+
+**Reference**: See `docs/sso-implementation.md` for complete SSO implementation guide.
+
+---
+
 ## 2024-12-28 - JWT Specification Validation
 
 ### Analysis Completed
@@ -381,3 +434,59 @@ Log of changes made by AI. Add concise summaries here.
 - **Complete Coverage**: Both main and standalone applications ready for development
 - **Better Testing**: Easy to test interactions between different application approaches
 - **Developer Productivity**: No need to remember multiple commands for full setup
+
+## 2025-11-11 - SSO (Single Sign-On) Implementation for OAuth Server
+
+### Summary
+
+Implemented SSO session management for the OAuth server, allowing users to authorize once and automatically be approved for subsequent authorization requests from the same provider. Follows the same patterns and practices used in the backend for consistency.
+
+### Files Created
+
+- `oauth-server/src/stores/sso-session.store.ts` - SSO session storage with SHA-256 hashed session IDs
+- `oauth-server/src/utils/cookie.utils.ts` - Cookie management utilities
+- `oauth-server/src/services/ssoCleanup.ts` - Automatic cleanup service (5-minute interval)
+- `docs/sso-implementation.md` - Comprehensive SSO documentation
+
+### Files Modified
+
+- `oauth-server/src/routes/authorize.routes.ts` - Added SSO session checking and auto-approval flow
+- `oauth-server/src/index.ts` - Added cookie-parser middleware and SSO cleanup service
+- `oauth-server/package.json` - Added cookie-parser dependencies
+
+### Key Features
+
+1. **Auto-Approval**: Users with valid SSO sessions skip consent page
+2. **Provider-Specific**: Each provider gets separate SSO session (configurable expiry, default: 24 hours)
+3. **Cross-Application**: Works across main app (3001) and frontend-standalone (3003)
+4. **Security**: SHA-256 hashed session IDs, HTTP-only cookies, SameSite=strict, automatic cleanup
+
+### How It Works
+
+- First authorization: User sees consent page → Creates SSO session + cookie
+- Subsequent authorizations: Valid SSO session found → Auto-approved (no consent page)
+- Different provider: Consent page required (provider-specific sessions)
+
+### Backend Pattern Consistency
+
+- Session storage: Map with SHA-256 hashing (like refresh tokens)
+- Cookie management: HTTP-only, SameSite=strict, path-limited (like backend)
+- Cleanup service: Every 5 minutes (same as backend token cleanup)
+- Security practices: Defense-in-depth, same configuration patterns
+
+### Testing
+
+```bash
+# Start services
+npm run dev
+
+# Test SSO: Login → Logout → Login again → Auto-approved ✓
+# Cross-app: Main app login → Frontend-standalone → Auto-approved ✓
+# Check session: curl http://localhost:3002/oauth/session/status
+```
+
+### Reasoning
+
+- **Problem**: User had to re-authorize when opening frontend-standalone after logging into main app
+- **Solution**: SSO sessions allow automatic approval for same provider
+- **Approach**: Follow backend patterns for consistency and proven security practices

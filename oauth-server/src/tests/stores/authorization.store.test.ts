@@ -5,7 +5,7 @@ import {
   deleteAuthorizationCode,
   hasAuthorizationCode,
   clearExpiredAuthorizationCodes,
-} from '../../store/authorization.store';
+} from '../../stores/authorization.store';
 import { describe, it, expect, beforeEach } from '@jest/globals';
 
 // Mock to access the store directly for cleanup

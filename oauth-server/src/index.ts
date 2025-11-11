@@ -1,11 +1,13 @@
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import path from 'path';
 import { config } from './config';
 import authorizeRoutes from './routes/authorize.routes';
 import tokenRoutes from './routes/token.routes';
 import userinfoRoutes from './routes/userinfo.routes';
+import { startSSOCleanup } from './services/ssoCleanup';
 
 dotenv.config();
 
@@ -24,6 +26,7 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
+app.use(cookieParser()); // SSO: Cookie parser for session management
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -42,6 +45,9 @@ app.use((err: Error, req: express.Request, res: express.Response, _next: express
   console.error(err.stack);
   res.status(500).json({ error: 'Something went wrong!' });
 });
+
+// Start SSO session cleanup (following backend's pattern)
+startSSOCleanup();
 
 // Start server
 const port = config.port;

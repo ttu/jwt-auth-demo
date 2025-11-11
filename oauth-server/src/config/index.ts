@@ -5,6 +5,12 @@ export const config = {
   jwtSecret: process.env.JWT_SECRET || 'fake-oauth-secret',
   accessTokenExpiry: parseInt(process.env.ACCESS_TOKEN_EXPIRY || '3600', 10), // 1 hour
   refreshTokenExpiry: parseInt(process.env.REFRESH_TOKEN_EXPIRY || '604800', 10), // 7 days
+  sso: {
+    sessionExpiry: parseInt(process.env.SSO_SESSION_EXPIRY || '86400', 10), // 24 hours (configurable)
+  },
+  server: {
+    nodeEnv: process.env.NODE_ENV || 'development',
+  },
   providers: {
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID || 'fake-google-client-id',

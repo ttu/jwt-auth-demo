@@ -378,6 +378,90 @@ Authorization: Bearer oauth_access_token
 }
 ```
 
+### SSO (Single Sign-On) Endpoints
+
+#### GET `/oauth/session/status`
+
+Check SSO session status (debugging endpoint).
+
+**Cookies:**
+
+```
+oauth_sso_session=<session_id>
+```
+
+**Response:**
+
+```json
+{
+  "hasSession": true,
+  "session": {
+    "userId": "user123",
+    "provider": "google",
+    "createdAt": "2025-11-11T10:00:00.000Z",
+    "lastUsedAt": "2025-11-11T10:30:00.000Z",
+    "expiresAt": "2025-11-12T10:00:00.000Z"
+  }
+}
+```
+
+#### GET `/oauth/sessions`
+
+List all active SSO sessions for the current user (requires active SSO session).
+
+**Cookies:**
+
+```
+oauth_sso_session=<session_id>
+```
+
+**Response:**
+
+```json
+{
+  "sessions": [
+    {
+      "provider": "google",
+      "createdAt": "2025-11-11T10:00:00.000Z",
+      "lastUsedAt": "2025-11-11T10:30:00.000Z",
+      "expiresAt": "2025-11-12T10:00:00.000Z"
+    }
+  ]
+}
+```
+
+#### POST `/oauth/logout`
+
+Revoke SSO session and clear session cookie.
+
+**Cookies:**
+
+```
+oauth_sso_session=<session_id>
+```
+
+**Response:**
+
+```json
+{
+  "message": "Logged out successfully"
+}
+```
+
+**Cookies Cleared:**
+
+- `oauth_sso_session`: SSO session cookie
+
+**SSO Flow Details:**
+
+1. **First Authorization**: User approves OAuth consent → SSO session created (configurable expiry)
+2. **Subsequent Requests**: Valid SSO session for same provider → Auto-approved (no consent UI)
+3. **Cross-Application**: SSO works across main app (port 3001) and frontend-standalone (port 3003)
+4. **Provider Isolation**: Each provider (Google, Microsoft, Strava, Company) has separate sessions
+5. **Automatic Cleanup**: Expired sessions removed every 5 minutes
+
+See [docs/sso-implementation.md](./sso-implementation.md) for complete SSO documentation.
+
 ## Error Responses
 
 All endpoints may return the following error responses:

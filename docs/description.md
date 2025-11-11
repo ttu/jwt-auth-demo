@@ -4,7 +4,7 @@ App description, use cases, features.
 
 ## Overview
 
-React Node JWT Example is a comprehensive demonstration of modern JWT-based authentication patterns, showcasing secure token management, OAuth integration (including PKCE for SPAs), and session handling in a full-stack TypeScript application. The project includes two OAuth implementations: a traditional backend-proxied flow and a modern Authorization Code + PKCE flow for single-page applications.
+React Node JWT Example is a comprehensive demonstration of modern JWT-based authentication patterns, showcasing secure token management, OAuth integration (including PKCE for SPAs), SSO session management, and device-specific session handling in a full-stack TypeScript application. The project includes two OAuth implementations: a traditional backend-proxied flow and a modern Authorization Code + PKCE flow for single-page applications, with SSO support across both approaches.
 
 ## Use Cases
 
@@ -35,8 +35,14 @@ React Node JWT Example is a comprehensive demonstration of modern JWT-based auth
 ### 5. Session Management Example
 
 - **Target Audience**: Applications with complex session requirements
-- **Value**: Device-specific session management
-- **Features**: Session visibility, selective revocation, audit trails
+- **Value**: Device-specific session management with SSO support
+- **Features**: Session visibility, selective revocation, audit trails, cross-application SSO
+
+### 6. SSO Implementation Reference
+
+- **Target Audience**: Developers building OAuth providers or SSO systems
+- **Value**: Production-ready SSO session management following backend patterns
+- **Features**: Provider-specific sessions, configurable expiry, automatic cleanup, cross-application support
 
 ## Key Features
 
@@ -53,11 +59,12 @@ React Node JWT Example is a comprehensive demonstration of modern JWT-based auth
 - **Single-Use Refresh Tokens**: Enhanced security through token rotation
 - **Token Blacklisting**: Immediate token revocation capability
 - **Algorithm Specification**: Protection against JWT algorithm confusion attacks
-- **Secure Cookie Storage**: HTTP-only cookies for refresh tokens
+- **Secure Cookie Storage**: HTTP-only cookies for refresh tokens and SSO sessions
 - **CSRF Protection**: SameSite cookie attributes and state parameters
 - **PKCE Implementation**: RFC 7636 compliant with SHA-256 hashing
 - **Cryptographic Security**: Web Crypto API for secure random generation
-- **SHA-256 Token Hashing**: Defense-in-depth for stored refresh tokens
+- **SHA-256 Token Hashing**: Defense-in-depth for stored refresh tokens and SSO session IDs
+- **SSO Session Management**: Secure, provider-specific sessions with automatic expiration
 
 ### User Experience
 

@@ -176,6 +176,60 @@ interface OAuthState {
 - Replay attack mitigation
 - State parameter validation
 
+### SSOSession
+
+**Purpose**: Manages Single Sign-On sessions for OAuth providers
+**Storage**: In-memory Map (OAuth server) with SHA-256 hashed session IDs
+
+```typescript
+interface SSOSession {
+  id: string; // SHA-256 hashed UUID session ID
+  userId: string; // User identifier from OAuth provider
+  provider: OAuthProvider; // OAuth provider ('google' | 'microsoft' | 'strava' | 'company')
+  createdAt: Date; // Session creation timestamp
+  lastUsedAt: Date; // Last usage timestamp (updated on each use)
+  expiresAt: Date; // Expiration timestamp (configurable via SSO_SESSION_EXPIRY)
+  isRevoked: boolean; // Manual revocation flag
+}
+```
+
+**Cookie Storage**:
+
+```typescript
+// Cookie: oauth_sso_session (raw UUID, not hashed)
+{
+  name: 'oauth_sso_session';
+  value: string; // Raw UUID (hashed before storage in Map)
+  httpOnly: false; // Demo mode, true in production
+  sameSite: 'strict'; // CSRF protection
+  path: '/oauth'; // Limited scope
+  maxAge: configurable; // Default: 86400000 (24 hours)
+}
+```
+
+**Lifecycle**:
+
+1. **Creation**: After first successful OAuth authorization
+2. **Usage**: Checked on each `/oauth/authorize` request
+3. **Auto-Approval**: If valid session exists for provider, skip consent page
+4. **Expiration**: Configurable via `SSO_SESSION_EXPIRY` (default: 24 hours)
+5. **Cleanup**: Automatic removal every 5 minutes (via `ssoCleanup` service)
+6. **Revocation**: Manual via `/oauth/logout` endpoint
+
+**Security Features**:
+
+- **SHA-256 Hashing**: Session IDs hashed before storage (defense-in-depth, following backend pattern)
+- **Provider Isolation**: Each provider has separate sessions
+- **Expiration Enforcement**: Configurable lifetime (default: 24 hours)
+- **Cookie Security**: HTTP-only (production), SameSite=strict, path-limited
+- **Cross-Application SSO**: Works across main app and frontend-standalone
+
+**Relationships**:
+
+- Associated with OAuthProvider
+- Linked to userId from provider's user data
+- Used during authorization flow to determine auto-approval
+
 ## Security Entities
 
 ### BlacklistedToken
@@ -283,9 +337,10 @@ User (1) ←→ (N) StoredToken ←→ (1) DeviceInfo
 
 ```
 OAuthProvider → OAuthUserInfo → User (mapped)
+OAuthProvider → SSOSession (configurable provider-specific sessions)
 ```
 
-**Description**: OAuth providers supply user information that gets mapped to internal user accounts. The mapping creates or updates local user records.
+**Description**: OAuth providers supply user information that gets mapped to internal user accounts. The mapping creates or updates local user records. SSO sessions are created per provider after first authorization, enabling auto-approval for subsequent requests.
 
 ### Token Lifecycle Model
 

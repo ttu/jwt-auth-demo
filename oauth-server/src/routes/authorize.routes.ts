@@ -1,8 +1,17 @@
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { config } from '../config';
-import { OAuthAuthorizationRequest } from '../types';
-import { setAuthorizationCode } from '../store/authorization.store';
+import { OAuthAuthorizationRequest, OAuthProvider } from '../types';
+import { setAuthorizationCode } from '../stores/authorization.store';
+import {
+  findSSOSession,
+  storeSSOSession,
+  generateSessionId,
+  revokeSSOSession,
+  getUserSSOSessions,
+} from '../stores/sso-session.store';
+import { setSSOSessionCookie, clearSSOSessionCookie, SSO_COOKIE_NAME } from '../utils/cookie.utils';
+import { mockUsers } from '../mock/users';
 
 const router = express.Router();
 
@@ -82,6 +91,55 @@ router.get('/authorize', (req, res) => {
 
   if (!isMainApp && !isStandaloneApp) {
     return res.status(400).json({ error: 'invalid_request', error_description: 'Invalid redirect_uri' });
+  }
+
+  // Check for existing SSO session (following backend's token validation pattern)
+  const sessionId = req.cookies?.[SSO_COOKIE_NAME];
+  const ssoSession = findSSOSession(sessionId);
+
+  console.log('[SSO] Checking for existing session:', {
+    hasSessionCookie: !!sessionId,
+    sessionValid: !!ssoSession,
+    provider: ssoSession?.provider,
+    requestedProvider: provider,
+  });
+
+  // If user has a valid SSO session for this provider, auto-approve
+  if (ssoSession && ssoSession.provider === provider) {
+    console.log(`[SSO] Auto-approving for user ${ssoSession.userId} with existing session`);
+
+    try {
+      // Generate authorization code
+      const code = uuidv4();
+      const expiresAt = Date.now() + 600000; // 10 minutes
+
+      setAuthorizationCode(code, {
+        code,
+        clientId: client_id,
+        redirectUri: redirect_uri,
+        provider,
+        expiresAt,
+        nonce,
+        codeChallenge: code_challenge,
+        codeChallengeMethod: code_challenge_method,
+      });
+
+      // Redirect back with authorization code (skip consent page)
+      const params = new URLSearchParams();
+      params.append('code', code);
+      if (state) {
+        params.append('state', state);
+      }
+
+      const separator = redirect_uri.includes('?') ? '&' : '?';
+      const redirectUrl = `${redirect_uri}${separator}${params.toString()}`;
+      console.log('[SSO] Auto-approved, redirecting to:', redirectUrl);
+
+      return res.redirect(redirectUrl);
+    } catch (error) {
+      console.error('[SSO] Error during auto-approval:', error);
+      // Fall through to show consent page
+    }
   }
 
   // debugger; // OAUTH SERVER: Consent Page Display - All validation passed, showing user consent form
@@ -193,11 +251,108 @@ router.post('/authorize/confirm', (req, res) => {
     const redirectUrl = `${redirect_uri}${separator}${params.toString()}`;
     console.log('Final redirect URL:', redirectUrl);
 
+    // Create SSO session for the user (following backend's token storage pattern)
+    // Using a mock user ID based on the provider (in a real app, this would come from actual authentication)
+    const user = mockUsers[provider as OAuthProvider];
+    if (user) {
+      const sessionId = generateSessionId();
+      storeSSOSession(sessionId, user.id, provider as OAuthProvider);
+
+      // Set SSO session cookie (following backend's cookie pattern)
+      setSSOSessionCookie(res, sessionId);
+
+      console.log(`[SSO] Created session for user ${user.id} with provider ${provider}`);
+    }
+
     res.redirect(redirectUrl);
   } catch (error) {
     console.error('Error during authorization confirmation:', error);
     res.status(500).json({ error: 'server_error', error_description: 'An error occurred during authorization' });
   }
+});
+
+// Authorization denial endpoint
+router.post('/authorize/deny', (req, res) => {
+  const { redirect_uri, state } = req.body;
+
+  console.log('[OAuth] Authorization denied:', { redirect_uri, state });
+
+  // Validate redirect URI
+  if (!redirect_uri || typeof redirect_uri !== 'string') {
+    return res.status(400).json({ error: 'invalid_request', error_description: 'Invalid redirect_uri' });
+  }
+
+  // Redirect back with error
+  const params = new URLSearchParams();
+  params.append('error', 'access_denied');
+  params.append('error_description', 'The user denied the authorization request');
+  if (state) {
+    params.append('state', state);
+  }
+
+  const separator = redirect_uri.includes('?') ? '&' : '?';
+  const redirectUrl = `${redirect_uri}${separator}${params.toString()}`;
+
+  res.redirect(redirectUrl);
+});
+
+// SSO logout endpoint (following backend's logout pattern)
+router.post('/logout', (req, res) => {
+  const sessionId = req.cookies?.[SSO_COOKIE_NAME];
+
+  if (sessionId) {
+    revokeSSOSession(sessionId);
+    console.log('[SSO] User logged out, session revoked');
+  }
+
+  // Clear SSO cookie (following backend's cookie clearing pattern)
+  clearSSOSessionCookie(res);
+
+  res.json({ success: true, message: 'Logged out successfully' });
+});
+
+// SSO session status endpoint (for debugging, similar to backend's session endpoints)
+router.get('/session/status', (req, res) => {
+  const sessionId = req.cookies?.[SSO_COOKIE_NAME];
+  const ssoSession = findSSOSession(sessionId);
+
+  if (ssoSession) {
+    res.json({
+      authenticated: true,
+      userId: ssoSession.userId,
+      provider: ssoSession.provider,
+      createdAt: ssoSession.createdAt.toISOString(),
+      expiresAt: ssoSession.expiresAt.toISOString(),
+      lastUsedAt: ssoSession.lastUsedAt.toISOString(),
+    });
+  } else {
+    res.json({
+      authenticated: false,
+    });
+  }
+});
+
+// Get all SSO sessions for debugging (similar to backend's GET /sessions)
+router.get('/sessions', (req, res) => {
+  const sessionId = req.cookies?.[SSO_COOKIE_NAME];
+  const ssoSession = findSSOSession(sessionId);
+
+  if (!ssoSession) {
+    return res.status(401).json({ error: 'unauthorized', error_description: 'No active SSO session' });
+  }
+
+  const sessions = getUserSSOSessions(ssoSession.userId);
+
+  res.json({
+    userId: ssoSession.userId,
+    sessions: sessions.map(s => ({
+      id: s.id.substring(0, 16) + '...',
+      provider: s.provider,
+      lastUsedAt: s.lastUsedAt.toISOString(),
+      expiresAt: s.expiresAt.toISOString(),
+      isRevoked: s.isRevoked,
+    })),
+  });
 });
 
 export default router;

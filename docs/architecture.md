@@ -34,6 +34,9 @@ Tech stack, folder structure, testing frameworks.
 - **Implementation**: Express server with EJS templating
 - **Providers**: Google, Microsoft, Strava, Company (mock implementations)
 - **PKCE Support**: Full RFC 7636 implementation with SHA-256 verification
+- **SSO Sessions**: Configurable provider-specific sessions with auto-approval (default: 24 hours)
+- **Session Storage**: SHA-256 hashed session IDs in-memory Map (following backend pattern)
+- **Cleanup Service**: Automatic cleanup every 5 minutes (same as backend)
 
 ### Integration Testing
 
@@ -302,19 +305,20 @@ sequenceDiagram
 
 **Comparison: Main App vs Standalone App OAuth Flows**
 
-| Aspect                   | Main App (Backend-Proxied)                    | Standalone App (PKCE)                     |
-| ------------------------ | --------------------------------------------- | ----------------------------------------- |
-| **Port**                 | 3000 (frontend) + 3001 (backend)              | 3003 (frontend only)                      |
-| **OAuth Flow**           | Authorization Code via backend proxy          | Authorization Code + PKCE (direct)        |
-| **Backend Required**     | Yes (Node.js API server)                      | No (pure SPA)                             |
-| **Client Secret**        | Used (stored on backend)                      | Not needed (PKCE replaces it)             |
-| **Token Exchange**       | Backend exchanges code for tokens             | Frontend exchanges code + verifier        |
-| **Security Mechanism**   | Client secret + HTTP-only cookies             | PKCE + state parameter                    |
-| **Recommended For**      | Apps with backend infrastructure              | SPAs, mobile apps, serverless             |
-| **Production Use**       | ✅ Highest security (httpOnly cookies)        | ✅ Approved (OAuth 2.0 Security BCP)      |
-| **Token Storage**        | HTTP-only cookies (XSS-proof)                 | Memory (session) or sessionStorage        |
-| **Additional Features**  | Token blacklisting, device tracking, sessions | Educational PKCE demo                     |
-| **OAuth 2.1 Compliance** | ✅ Yes                                        | ✅ Yes (PKCE required for public clients) |
+| Aspect                   | Main App (Backend-Proxied)                       | Standalone App (PKCE)                            |
+| ------------------------ | ------------------------------------------------ | ------------------------------------------------ |
+| **Port**                 | 3000 (frontend) + 3001 (backend)                 | 3003 (frontend only)                             |
+| **OAuth Flow**           | Authorization Code via backend proxy             | Authorization Code + PKCE (direct)               |
+| **Backend Required**     | Yes (Node.js API server)                         | No (pure SPA)                                    |
+| **Client Secret**        | Used (stored on backend)                         | Not needed (PKCE replaces it)                    |
+| **Token Exchange**       | Backend exchanges code for tokens                | Frontend exchanges code + verifier               |
+| **Security Mechanism**   | Client secret + HTTP-only cookies                | PKCE + state parameter                           |
+| **Recommended For**      | Apps with backend infrastructure                 | SPAs, mobile apps, serverless                    |
+| **Production Use**       | ✅ Highest security (httpOnly cookies)           | ✅ Approved (OAuth 2.0 Security BCP)             |
+| **Token Storage**        | HTTP-only cookies (XSS-proof)                    | Memory (session) or sessionStorage               |
+| **Additional Features**  | Token blacklisting, device tracking, sessions    | Educational PKCE demo                            |
+| **OAuth 2.1 Compliance** | ✅ Yes                                           | ✅ Yes (PKCE required for public clients)        |
+| **SSO Support**          | ✅ Yes (configurable provider-specific sessions) | ✅ Yes (configurable provider-specific sessions) |
 
 **When to Use Each Approach:**
 
@@ -330,6 +334,103 @@ sequenceDiagram
   - Mobile application
   - Educational/demo purposes
   - Following OAuth 2.1 best practices for public clients
+
+## SSO (Single Sign-On) Implementation
+
+The OAuth server implements SSO session management, allowing users to authorize once per provider and be automatically approved for subsequent authorization requests without needing to re-authorize.
+
+### SSO Architecture
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                      SSO Session Lifecycle                        │
+└──────────────────────────────────────────────────────────────────┘
+
+First Authorization:
+┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐
+│   App    │───▶│  OAuth   │───▶│ Consent  │───▶│   SSO    │
+│          │    │  Server  │    │   Page   │    │ Session  │
+│          │◀───│          │◀───│ Approve  │◀───│ Created  │
+└──────────┘    └──────────┘    └──────────┘    └──────────┘
+   Auto-login with auth code      24hr cookie
+
+Subsequent Authorization (Same Provider):
+┌──────────┐    ┌──────────┐    ┌──────────┐
+│   App    │───▶│  OAuth   │───▶│   Auto   │
+│          │    │  Server  │    │ Approved │
+│          │◀───│ (checks) │◀───│ (no UI)  │
+└──────────┘    └──────────┘    └──────────┘
+             SSO session valid     Immediate redirect
+```
+
+### SSO Features
+
+1. **Provider-Specific Sessions**
+   - Each OAuth provider (Google, Microsoft, Strava, Company) has separate SSO sessions
+   - User must authorize each provider once
+   - After first authorization, subsequent requests to same provider are auto-approved
+
+2. **Cross-Application SSO**
+   - Works across main app (port 3001) and frontend-standalone (port 3003)
+   - Single authorization applies to both applications
+   - Example: Login with Google in main app → Open frontend-standalone → Auto-approved ✓
+
+3. **Session Storage**
+   - In-memory Map with SHA-256 hashed session IDs (following backend refresh token pattern)
+   - Session data structure:
+     ```typescript
+     {
+       id: string; // SHA-256 hashed UUID
+       userId: string; // User identifier
+       provider: OAuthProvider; // 'google' | 'microsoft' | 'strava' | 'company'
+       createdAt: Date; // Session creation time
+       lastUsedAt: Date; // Updated on each use
+       expiresAt: Date; // Configurable expiry (default: 24 hours)
+       isRevoked: boolean; // Manual revocation flag
+     }
+     ```
+
+4. **Cookie Management**
+   - Cookie name: `oauth_sso_session`
+   - HTTP-only: `false` (demo), `true` (production)
+   - SameSite: `strict` (CSRF protection)
+   - Path: `/oauth` (limited scope)
+   - Max-Age: Configurable (default: 86400 seconds / 24 hours)
+
+5. **Automatic Cleanup**
+   - Cleanup service runs every 5 minutes (same as backend token cleanup)
+   - Removes expired sessions and authorization codes automatically
+   - Silent deletion (following backend pattern)
+
+### SSO Security
+
+1. **SHA-256 Hashed Session IDs**: Session IDs hashed before storage (defense-in-depth)
+2. **Provider Isolation**: Each provider has separate sessions
+3. **Expiration Enforcement**: Configurable session lifetime (`SSO_SESSION_EXPIRY` env var)
+4. **Revocation Support**: Sessions can be manually revoked via `/oauth/logout`
+5. **Cookie Security**: HTTP-only, SameSite=strict, path-limited
+
+### SSO Endpoints
+
+| Endpoint                   | Method | Purpose                                    |
+| -------------------------- | ------ | ------------------------------------------ |
+| `/oauth/authorize`         | GET    | Checks SSO session, auto-approves if valid |
+| `/oauth/authorize/confirm` | POST   | Creates SSO session after user approval    |
+| `/oauth/logout`            | POST   | Revokes SSO session and clears cookie      |
+| `/oauth/session/status`    | GET    | Check SSO session status (debugging)       |
+| `/oauth/sessions`          | GET    | List all user sessions (debugging)         |
+
+### SSO Testing
+
+**Manual Test Flow:**
+
+1. Start services: `npm run dev`
+2. Main app (port 3000): Login with Google → Consent page → Approve
+3. Logout → Login with Google again → **Auto-approved** (no consent page) ✓
+4. Frontend-standalone (port 3003): Sign in with Google → **Auto-approved** ✓
+5. Different provider: Sign in with Microsoft → Consent page (new provider)
+
+See [docs/sso-implementation.md](./sso-implementation.md) for complete SSO documentation.
 
 ## Security Features
 
@@ -493,18 +594,21 @@ This is a comprehensive JWT authentication demo featuring a multi-service archit
 ├── oauth-server/              # Fake OAuth Server for Testing
 │   ├── src/
 │   │   ├── routes/           # OAuth route handlers
-│   │   │   ├── authorize.js  # Authorization endpoints (PKCE support)
+│   │   │   ├── authorize.js  # Authorization endpoints (PKCE + SSO support)
 │   │   │   ├── token.js      # Token exchange (PKCE verification)
 │   │   │   └── userinfo.js   # User information
 │   │   ├── config/           # OAuth configuration
 │   │   │   ├── providers.js  # Provider configurations
 │   │   │   └── clients.js    # Client registrations
 │   │   ├── stores/           # OAuth data stores
-│   │   │   ├── authorizationCodes.js # Authorization codes (with PKCE)
-│   │   │   └── tokens.js             # OAuth tokens
+│   │   │   ├── authorization.store.ts # Authorization codes (with PKCE)
+│   │   │   └── sso-session.store.ts   # SSO sessions (configurable expiry)
+│   │   ├── services/         # OAuth services
+│   │   │   └── ssoCleanup.ts # SSO session and auth code cleanup
 │   │   ├── utils/            # OAuth utilities
 │   │   │   ├── jwt.js        # JWT creation for OAuth
 │   │   │   ├── crypto.js     # PKCE verification utilities
+│   │   │   ├── cookie.utils.ts # SSO cookie management
 │   │   │   └── providers.js  # Provider-specific logic
 │   │   └── server.js         # OAuth server setup
 │   ├── views/                # HTML templates
@@ -535,6 +639,7 @@ This is a comprehensive JWT authentication demo featuring a multi-service archit
 │   ├── debugging.md         # Debugging guide
 │   ├── testing.md           # Testing guide and strategy
 │   ├── pkce-validation-report.md # PKCE security validation
+│   ├── sso-implementation.md # SSO implementation guide
 │   ├── todo.md              # Project tasks and status
 │   ├── ai_changelog.md      # AI-generated changes log
 │   └── learnings.md         # Technical learnings

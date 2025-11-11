@@ -2,7 +2,7 @@ import express from 'express';
 import jwt from 'jsonwebtoken';
 import { config } from '../config';
 import { OAuthTokenRequest, OAuthTokenResponse } from '../types';
-import { getAuthorizationCode, deleteAuthorizationCode } from '../store/authorization.store';
+import { getAuthorizationCode, deleteAuthorizationCode } from '../stores/authorization.store';
 import { mockUsers } from '../mock/users';
 import { verifyPKCE } from '../utils/crypto.utils';
 
