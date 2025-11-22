@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to AI agents (Claude, Cursor AI, etc.) when working with code in this repository.
 
 ## Project Overview
 
@@ -11,8 +11,9 @@ This is a comprehensive JWT authentication demo featuring a React frontend, Node
 ### Multi-Service Architecture
 
 - **Backend (port 3001)**: Node.js/Express API server with JWT authentication
-- **Frontend (port 3000)**: React/Vite SPA with TypeScript
-- **OAuth Server (port 3002)**: Fake OAuth server for testing OAuth flows
+- **Frontend (port 3000)**: React/Vite SPA with TypeScript (backend-proxied OAuth)
+- **Frontend-Standalone (port 3003)**: React/Vite SPA demonstrating Authorization Code + PKCE flow (no backend required)
+- **OAuth Server (port 3002)**: Fake OAuth server for testing OAuth flows with SSO sessions
 - **Integration Tests**: Playwright-based E2E tests
 
 ### Key Components
@@ -21,6 +22,7 @@ This is a comprehensive JWT authentication demo featuring a React frontend, Node
 - **Session Management**: Virtual sessions via refresh token chains
 - **Security Features**: Token blacklisting, CSRF protection, SHA-256 hashed token storage, automatic cleanup
 - **OAuth Integration**: Support for Google, Microsoft, Strava, and Company providers
+- **PKCE Support**: Frontend-standalone demonstrates Authorization Code + PKCE flow (RFC 7636) for SPAs
 
 ## Development Commands
 
@@ -30,20 +32,24 @@ This is a comprehensive JWT authentication demo featuring a React frontend, Node
 # Install all dependencies across services
 npm run install:all
 
-# Start all services in development mode
+# Start ALL services in development mode (main + standalone apps)
 npm run dev
 
-# Build all services
+# Start standalone app + OAuth server only
+npm run dev:standalone
+
+# Build all services (main + standalone apps)
 npm run build
 
 # Start all services in production mode
 npm start
 
 # Run integration tests
-npm run test:integration
-npm run test:integration:debug  # with debugging
-npm run test:integration:ui     # with UI
-npm run test:integration:headed # with browser UI
+npm run test:integration         # Main app tests
+npm run test:standalone          # Standalone app tests
+npm run test:integration:debug   # with debugging
+npm run test:integration:ui      # with UI
+npm run test:integration:headed  # with browser UI
 ```
 
 ### Backend Commands (cd backend/)
@@ -64,13 +70,22 @@ npm run build   # TypeScript + Vite build
 npm run preview # Preview production build
 ```
 
+### Frontend-Standalone Commands (cd frontend-standalone/)
+
+```bash
+npm run dev        # Vite development server (port 3003)
+npm run build      # TypeScript + Vite build
+npm run preview    # Preview production build
+npm run type-check # TypeScript type checking
+```
+
 ### OAuth Server Commands (cd oauth-server/)
 
 ```bash
 npm run dev   # Development with nodemon
 npm run build # TypeScript compilation + asset copy
 npm run start # Production start
-npm run test  # Jest tests
+npm run test  # Jest tests (58 unit tests)
 ```
 
 ### Integration Tests (cd integration-tests/)
@@ -137,12 +152,31 @@ Backend requires these environment variables (defaults provided):
 - **Middleware**: JWT validation with comprehensive error handling
 - **Utils**: Token creation/validation, cookie management, OAuth helpers
 
+### OAuth Server Architecture
+
+- **Purpose**: Mock OAuth provider for demonstration and testing
+- **Providers**: Google, Microsoft, Strava, Company (mock implementations)
+- **PKCE Support**: Full RFC 7636 implementation with SHA-256 verification
+- **SSO Sessions**: Configurable provider-specific sessions with auto-approval (default: 24 hours)
+- **Session Storage**: SHA-256 hashed session IDs in-memory Map
+- **Cleanup Service**: Automatic cleanup of expired sessions every 5 minutes
+
 ### Frontend Architecture
+
+#### Main Frontend (port 3000)
 
 - **Context**: AuthContext for global authentication state
 - **Services**: Token refresh, OAuth handling
-- **API Layer**: Axios-based with automatic token refresh interceptors
+- **API Layer**: Fetch API with automatic token refresh interceptors
 - **Components**: Modular auth components with proper separation
+- **Pattern**: Backend-proxied OAuth flow with JWT tokens
+
+#### Standalone Frontend (port 3003)
+
+- **Pattern**: Pure SPA with Authorization Code + PKCE flow
+- **Authentication**: Direct OAuth with PKCE (no backend required)
+- **Security**: Web Crypto API for cryptographically secure PKCE
+- **Purpose**: Demonstrates PKCE implementation for SPAs
 
 ### Token Management Flow
 
@@ -157,7 +191,10 @@ Backend requires these environment variables (defaults provided):
 ### Common Workflows
 
 - Always run `npm run install:all` after pulling changes
-- Use `npm run dev` to start all services simultaneously
+- Use `npm run dev` to start all services simultaneously (main + standalone apps)
+- Use `npm run dev:standalone` to start only standalone app + OAuth server
+- Main app at http://localhost:3000 (backend-proxied OAuth)
+- Standalone app at http://localhost:3003 (PKCE flow, no backend)
 - Backend API available at http://localhost:3001/api
 - OAuth server UI at http://localhost:3002
 - Check integration tests for OAuth flow examples
@@ -206,6 +243,17 @@ This ensures your changes are ready to push and will pass CI checks.
 
 ## Documentation
 
+---
+
+# AI Agent Rules
+
+## 1. Role & Context
+
+- **Role Definition**: You are an AI programming assistant focused on concise, context-aware solutions. Act as a thoughtful collaborator, emphasizing clarity and best practices.
+- **Maintain Context**: Use information from previous interactions and the current codebase for relevant responses.
+
+## 2. Documentation (Read First!)
+
 Documentation and Context Files in /docs folder. Use for using, creating, updating documentation.
 
 Reference these files for understanding the project and architecture.
@@ -215,6 +263,7 @@ Reference these files for understanding the project and architecture.
 - `datamodel.md`: Entities, attributes, relationships.
 - `frontend.md`: Views/screens, UI/UX patterns, styling.
 - `backend.md`: API endpoints, authentication, service architecture.
+- `sso-implementation.md`: SSO session management and OAuth implementation details.
 - `debugging.md`: Debugging guide with VS Code setup and breakpoint instructions.
 - `testing.md`: Complete testing guide - unit tests (114 tests), integration tests, and CI/CD pipeline.
 - `todo.md`: Task list (✅ done, ⏳ in progress, ❌ not started). Update status, don't remove tasks.
@@ -224,3 +273,76 @@ Reference these files for understanding the project and architecture.
 Important files at root folder.
 
 - `README.md`: Quick start guide, key features overview, debugging instructions, documentation links, contributing guidelines, and license information
+
+- Do not create new documentation file for each new feature. Update existing documentation files. If new file is appropriate for the new functionality, ask for permission to create new file or update existing.
+
+## 3. Understanding Phase (Before Any Work)
+
+- **Restate Requirements**: Confirm understanding and alignment
+- **Identify Challenges**: Highlight edge cases, ambiguities, or potential issues
+- **Ask Clarifying Questions**: Address assumptions or missing details
+- **Provide References**: Link to documentation sources; never invent solutions
+
+## 4. Planning Phase
+
+- **Plan the Implementation**:
+  - Break down into clear, step-by-step changes
+  - Justify each step against requirements
+  - Identify dependencies and needed features
+- **Propose Mock API/UX** (if relevant): Outline affected APIs, UI, or user flows
+- **Pause for Complex Tasks**: For non-trivial implementations, wait for explicit approval before coding
+
+## 5. Implementation Phase
+
+- **Use Test-Driven Development (TDD)**:
+  - ⚠️ **ALWAYS** write tests FIRST
+  - Then implement code to pass tests
+  - Then refactor to improve code quality (red-green-refactor)
+  - Ensures quality, maintainability, test coverage
+
+- **Write Clean, Readable Code**:
+  - Use clear, descriptive names for variables, functions, and classes
+  - Keep functions small and focused (single responsibility)
+  - Add comments only when "why" isn't obvious from code
+  - Prefer self-documenting code over excessive comments
+
+- **Follow Good Practices**:
+  - Keep code modular and reusable
+  - Avoid duplication (DRY principle)
+  - Make dependencies explicit and clear
+  - Use pure functions whenever possible (no side effects)
+  - Prefer composition over inheritance
+
+- **Handle Errors Properly**:
+  - Validate inputs and handle edge cases
+  - Use appropriate error handling mechanisms (try-catch, error returns, etc.)
+  - Provide clear, actionable error messages
+  - Never swallow errors silently
+
+- **Maintain Type Safety** (when applicable):
+  - Use strong typing when language supports it
+  - Avoid loosely-typed constructs (e.g., `any`, `void*`, untyped dicts)
+  - Leverage type inference where appropriate
+
+- **Consider Performance**:
+  - Profile before optimizing (avoid premature optimization)
+  - Use appropriate data structures and algorithms
+  - Cache expensive computations when appropriate
+  - Be mindful of memory usage and leaks
+
+- **Security & Validation**:
+  - Validate and sanitize all external inputs
+  - Follow security best practices for the language/framework
+  - Never trust user input
+  - Use parameterized queries to prevent injection attacks
+
+- **Be Concise**: Focus only on what's required; avoid unnecessary complexity (YAGNI - You Aren't Gonna Need It)
+
+## 6. Verification Phase
+
+- **Keep Code Clean**: Always format and lint after changes
+- **Verify Changes**: Run relevant unit tests after significant updates
+- **Update Documentation**:
+  - Log changes in `ai_changelog.md`
+  - Update `todo.md` status
+  - Add learnings to `learnings.md`

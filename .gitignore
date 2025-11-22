@@ -26,8 +26,9 @@ yarn-error.log*
 *.sln
 *.sw?
 
-# Cursor AI files
-.cursor/ 
+# AI Editor files
+.cursor/
+.claude/ 
 
 # Playwright
 integration-tests/test-results/
