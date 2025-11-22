@@ -39,29 +39,36 @@ To disable all debugger statements (restore default state):
 
 ### 🗺️ Debugging Flow Coverage
 
-The debugger statements cover:
+The debugger statements cover **34 strategic breakpoints** across:
 
-#### Backend
+#### Backend (7 breakpoints)
 
 - **OAuth Flow**: From provider selection to session creation
-- **Password Authentication**: Credential validation to token generation
-- **Token Refresh**: Automatic token renewal process
-- **Authentication Middleware**: Token validation and security checks
-- **Session Management**: Multi-device session tracking
+- **Token Exchange**: Authorization code to access/refresh tokens
+- **Token Validation**: Nonce validation and ID token verification
+- **User Info Retrieval**: OAuth provider profile data
+- **Session Management**: Device-specific session creation
 
-#### OAuth Server
+#### OAuth Server (13 breakpoints)
 
-- **Authorization Endpoint**: User consent and authorization code generation
-- **Token Endpoint**: Authorization code exchange for tokens
-- **User Info Endpoint**: Access token validation and user profile retrieval
+- **Authorization Endpoint**: Parameter validation, SSO auto-approval, consent flow
+- **Token Endpoint**: Code validation, PKCE verification, token generation
+- **PKCE Verification**: Code verifier validation for public clients
+- **SSO Sessions**: Cross-application single sign-on
 
-#### Frontend
+#### Frontend - Main App (6 breakpoints)
 
-- **AuthContext**: Authentication state management
-- **Token Refresh Service**: Proactive token renewal
-- **OAuth Components**: OAuth initiation and callback handling
-- **Login Component**: User interaction handling
-- **API Layer**: HTTP request/response handling
+- **OAuth Initiation**: Provider selection and authorization URL request
+- **OAuth Callback**: Token receipt and session establishment
+- **Error Handling**: OAuth flow failure scenarios
+
+#### Frontend Standalone - PKCE Flow (8 breakpoints)
+
+- **PKCE Parameter Generation**: Code verifier and code challenge creation
+- **Authorization Request**: Redirecting with code_challenge
+- **Callback Processing**: State verification and code exchange
+- **Token Exchange**: Direct token request with code_verifier
+- **PKCE Utilities**: SHA-256 hashing and Base64URL encoding
 
 ### 🚀 Using the Debugger
 
@@ -75,10 +82,30 @@ The debugger statements cover:
    - What will happen next
    - Security implications of the current step
 
-### Educational Benefits
+### 📍 Key Breakpoint Locations
 
-- **Complete Flow Visibility**: See every step of JWT authentication
-- **Security Understanding**: Learn about nonce validation, token rotation, CSRF protection
-- **Architecture Insights**: Understand client-server authentication patterns
-- **Best Practices**: See how to implement secure authentication
+#### OAuth Flow (Main App)
+
+- `backend/src/routes/oauth.routes.ts` - OAuth flow start to session creation
+- `frontend/src/services/oauth.ts` - OAuth initiation and redirects
+- `frontend/src/components/OAuthCallback.tsx` - Callback processing
+
+#### PKCE Flow (Standalone App)
+
+- `frontend-standalone/src/App.tsx` - PKCE parameter generation and token exchange
+- `frontend-standalone/src/utils/pkce.ts` - Cryptographic PKCE utilities
+
+#### OAuth Server
+
+- `oauth-server/src/routes/authorize.routes.ts` - Authorization and consent
+- `oauth-server/src/routes/token.routes.ts` - Token exchange and PKCE verification
+- `oauth-server/src/utils/crypto.utils.ts` - PKCE verification logic
+
+### 🎓 Educational Benefits
+
+- **Complete Flow Visibility**: See every step of OAuth 2.0 and PKCE authentication
+- **Security Understanding**: Learn about nonce validation, CSRF protection, PKCE
+- **Architecture Insights**: Compare confidential vs public client patterns
+- **Best Practices**: See secure token management and session handling
 - **Troubleshooting**: Debug authentication issues step by step
+- **OAuth 2.0 Learning**: Understand authorization code flow with real implementation

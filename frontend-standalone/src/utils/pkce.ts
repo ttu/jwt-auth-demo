@@ -24,6 +24,7 @@
  * @returns Cryptographically random string suitable for PKCE code_verifier
  */
 export function generateCodeVerifier(length: number = 128): string {
+  // debugger; // PKCE: Generating code_verifier - Creating cryptographically random string
   // Validate length according to RFC 7636
   if (length < 43 || length > 128) {
     throw new Error(
@@ -78,6 +79,7 @@ export function generateState(length: number = 32): string {
  * @returns Promise resolving to Base64URL encoded SHA-256 hash
  */
 export async function generateCodeChallenge(verifier: string): Promise<string> {
+  // debugger; // PKCE: Generating code_challenge - Computing SHA-256 hash of code_verifier
   // Encode the verifier as UTF-8 bytes
   const encoder = new TextEncoder();
   const data = encoder.encode(verifier);

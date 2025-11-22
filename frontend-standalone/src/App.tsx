@@ -80,7 +80,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // STEP 4: OAuth Callback - User returned from OAuth server
+    // OAuth Callback - User returned from OAuth server
     // After user authorizes on OAuth server, they're redirected back here with code & state
     // We need to verify the state and process the authorization code
     const params = new URLSearchParams(window.location.search);
@@ -89,12 +89,13 @@ function App() {
 
     const processCallback = async () => {
       if (code && state) {
-        // STEP 5: Verify State - Prevent CSRF attacks
-        // The state parameter must match what we sent in Step 3
+        // debugger; // PKCE FLOW: OAuth callback received - Verifying state and processing code
+        // Verify State - Prevent CSRF attacks
+        // The state parameter must match what we sent before redirecting
         // This ensures the callback is from our own OAuth request, not an attacker
         const savedState = sessionStorage.getItem('oauth_state');
         if (state === savedState) {
-          // STEP 6: Process Authorization Code with PKCE
+          // Process Authorization Code with PKCE
           // Retrieve the code_verifier we generated before redirecting
           const codeVerifier = sessionStorage.getItem('code_verifier');
           const provider =
@@ -104,9 +105,10 @@ function App() {
           console.log('📝 Code:', code);
           console.log('🔑 Code Verifier:', codeVerifier);
 
-          // STEP 6.1: Exchange authorization code + code_verifier for tokens
+          // Exchange authorization code + code_verifier for tokens
           // This is the actual PKCE flow - we POST to the token endpoint
           try {
+            // debugger; // PKCE FLOW: Exchanging code + code_verifier for tokens
             console.log(
               '🔄 Exchanging authorization code for tokens (PKCE)...',
             );
@@ -138,6 +140,7 @@ function App() {
             }
 
             const tokens = await tokenResponse.json();
+            // debugger; // PKCE FLOW: Tokens received successfully
             console.log('✅ Tokens received:', {
               access_token: tokens.access_token ? '✓' : '✗',
               id_token: tokens.id_token ? '✓' : '✗',
@@ -145,7 +148,7 @@ function App() {
               expires_in: tokens.expires_in,
             });
 
-            // STEP 6.2: Fetch user info using access_token
+            // Fetch user info using access_token
             console.log('🌐 Fetching user info with access token...');
 
             const userinfoResponse = await fetch(
@@ -181,7 +184,7 @@ function App() {
               };
             }
 
-            // STEP 7: Store User Session
+            // Store User Session
             // Store tokens and user info securely:
             // - Store access_token in memory (React state/context) - NOT localStorage
             // - Store refresh_token in httpOnly cookie (if using a backend)
@@ -221,7 +224,7 @@ function App() {
           console.error('State mismatch - possible CSRF attack');
         }
       } else {
-        // STEP 1: Check Existing Session
+        // Check Existing Session
         // On initial load, check if user is already logged in
         const savedUser = sessionStorage.getItem('user');
         if (savedUser) {
@@ -236,7 +239,8 @@ function App() {
   }, []);
 
   const handleLogin = async (provider: string) => {
-    // STEP 2: Generate CSRF Protection + PKCE
+    // debugger; // PKCE FLOW: Starting OAuth login with PKCE - Generating parameters
+    // Generate CSRF Protection + PKCE
     // Generate cryptographically secure OAuth parameters (state + PKCE)
     // using the dedicated PKCE utilities module
     const oauthParams = await generateOAuthParameters({
@@ -249,7 +253,8 @@ function App() {
     sessionStorage.setItem('oauth_provider', provider);
     sessionStorage.setItem('code_verifier', oauthParams.codeVerifier);
 
-    // STEP 3: Redirect to OAuth Authorization Endpoint
+    // debugger; // PKCE FLOW: Redirecting to OAuth server with code_challenge
+    // Redirect to OAuth Authorization Endpoint
     // Build OAuth 2.0 + PKCE authorization URL with required parameters:
     // - response_type: 'code' means we want an authorization code (not implicit flow)
     // - client_id: Identifies our application to the OAuth server (provider-specific)
@@ -278,7 +283,7 @@ function App() {
   };
 
   const handleLogout = () => {
-    // STEP 8: Logout
+    // Logout
     // Clear user session from browser storage
     // In a production SPA, you should also:
     // 1. Revoke tokens by calling OAuth server's revocation endpoint

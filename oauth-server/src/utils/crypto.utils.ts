@@ -25,6 +25,7 @@ export const sha256Base64Url = (input: string): string => {
  * @returns true if verification succeeds
  */
 export const verifyPKCE = (codeVerifier: string, codeChallenge: string, method: 'S256' | 'plain' = 'S256'): boolean => {
+  // debugger; // PKCE: Verifying code_verifier - Computing hash and comparing with code_challenge
   let computedChallenge: string;
 
   if (method === 'S256') {

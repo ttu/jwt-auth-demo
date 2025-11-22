@@ -64,8 +64,8 @@ router.post('/token', (req, res) => {
     });
   }
 
-  // PKCE Verification - Validate code_verifier against stored code_challenge
   if (authCode.codeChallenge) {
+    // debugger; // OAUTH SERVER: PKCE Verification - Validating code_verifier against code_challenge
     // If authorization request included PKCE, token request MUST include code_verifier
     if (!code_verifier) {
       deleteAuthorizationCode(code);

@@ -14,6 +14,12 @@ This directory contains comprehensive documentation for the JWT authentication d
 
 - **[frontend.md](frontend.md)** - Views/screens, UI/UX patterns, and styling guide
 - **[backend.md](backend.md)** - API endpoints, authentication flows, and service architecture
+- **[sso-implementation.md](sso-implementation.md)** - SSO session management and OAuth implementation details
+
+### Development & Debugging
+
+- **[debugging.md](debugging.md)** - VS Code debugger setup and configuration guide
+- **[testing.md](testing.md)** - Unit tests, integration tests, and CI/CD pipeline documentation
 
 ### Project Management
 

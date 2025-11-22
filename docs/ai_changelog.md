@@ -2,6 +2,105 @@
 
 Log of changes made by AI. Add concise summaries here.
 
+## 2025-11-18 - Debugger Breakpoints for SSO and PKCE Flows
+
+**Summary**: Added comprehensive debugger breakpoints throughout SSO/OAuth and PKCE flows for easier debugging and learning.
+
+**Files Modified**:
+
+1. **Backend OAuth Routes** (`backend/src/routes/oauth.routes.ts`):
+   - Added 7 debugger breakpoints covering:
+     - OAuth flow start, URL construction
+     - OAuth callback, token exchange
+     - Token validation, user info retrieval
+     - Session creation and redirect
+
+2. **Frontend OAuth Service** (`frontend/src/services/oauth.ts`):
+   - Added 3 debugger breakpoints covering:
+     - OAuth initiation, OAuth redirect
+     - Error handling
+
+3. **Frontend OAuth Callback** (`frontend/src/components/OAuthCallback.tsx`):
+   - Added 3 debugger breakpoints covering:
+     - Callback processing, success handling
+     - Error handling
+
+4. **OAuth Server Authorization** (`oauth-server/src/routes/authorize.routes.ts`):
+   - Added 7 debugger breakpoints covering:
+     - Authorization request, parameter validation
+     - SSO auto-approval, consent page display
+     - User consent, code generation
+     - Redirect with authorization code
+
+5. **OAuth Server Token Endpoint** (`oauth-server/src/routes/token.routes.ts`):
+   - Added 6 debugger breakpoints covering:
+     - Token exchange request, code validation
+     - PKCE verification, token generation
+     - ID token creation, token response
+
+6. **Frontend Standalone PKCE** (`frontend-standalone/src/App.tsx`):
+   - Added 6 debugger breakpoints covering:
+     - PKCE parameter generation, redirect
+     - Callback processing, code exchange
+     - Token receipt
+
+7. **PKCE Utilities** (`frontend-standalone/src/utils/pkce.ts`):
+   - Added 2 debugger breakpoints covering:
+     - Code verifier generation
+     - Code challenge computation (SHA-256)
+
+8. **PKCE Verification** (`oauth-server/src/utils/crypto.utils.ts`):
+   - Added 1 debugger breakpoint for PKCE verification
+
+**Documentation Updates**:
+
+- **Updated**: `docs/README.md` - Added debugging section
+- **Updated**: `docs/ai_changelog.md` - Comprehensive changelog entry
+
+**Key Features**:
+
+- **34 Strategic Breakpoints**: Covering every critical step in OAuth and PKCE flows
+- **Commented Out by Default**: All debugger statements commented out to keep code clean
+- **Easy Enable/Disable**: Simple find & replace to enable/disable all breakpoints
+- **Detailed Comments**: Each breakpoint explains what's happening and what to inspect
+- **Complete Coverage**: Both main app (with backend) and standalone app (pure SPA)
+- **Learning Tool**: Breakpoints help understand OAuth 2.0 and PKCE implementation
+- **Security Insights**: Shows security measures (CSRF, nonce, PKCE) in action
+
+**How to Use**:
+
+```bash
+# 1. Enable breakpoints with find & replace:
+#    Find: // debugger;
+#    Replace: debugger;
+
+# 2. Open DevTools (F12), start OAuth flow - breakpoints will trigger
+# Or use VS Code debugger for backend/oauth-server (see debugging.md)
+
+# Example: Test SSO flow with breakpoints
+npm run dev
+# Click "Login with Google" - observe flow through all breakpoints
+# Logout and login again - see SSO auto-approval breakpoint
+
+# Example: Test PKCE flow with breakpoints
+npm run dev:standalone
+# Click any provider - observe PKCE parameter generation and verification
+
+# 3. Disable when done:
+#    Find: debugger;
+#    Replace: // debugger;
+```
+
+**Benefits**:
+
+- **Understanding**: Trace complete authentication flows step-by-step
+- **Debugging**: Quickly identify where issues occur in the flow
+- **Learning**: Educational tool for OAuth 2.0 and PKCE concepts
+- **Security Validation**: Verify security measures are working correctly
+- **Development**: Faster troubleshooting during feature development
+
+**Rationale**: Debugger breakpoints make it much easier to understand complex OAuth flows, troubleshoot issues, and learn OAuth 2.0 security concepts. The comprehensive documentation ensures developers know exactly what's happening at each step.
+
 ## 2025-11-11 - Made SSO Session Duration Configurable
 
 **Summary**: Made SSO session expiry configurable via environment variable instead of hardcoded 24 hours.

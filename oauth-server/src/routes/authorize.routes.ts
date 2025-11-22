@@ -104,8 +104,8 @@ router.get('/authorize', (req, res) => {
     requestedProvider: provider,
   });
 
-  // If user has a valid SSO session for this provider, auto-approve
   if (ssoSession && ssoSession.provider === provider) {
+    // debugger; // OAUTH SERVER: SSO AUTO-APPROVAL - User has existing SSO session, skipping consent
     console.log(`[SSO] Auto-approving for user ${ssoSession.userId} with existing session`);
 
     try {

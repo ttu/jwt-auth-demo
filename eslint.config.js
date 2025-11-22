@@ -123,6 +123,8 @@ export default [
         crypto: 'readonly',
         URL: 'readonly',
         URLSearchParams: 'readonly',
+        TextEncoder: 'readonly',
+        btoa: 'readonly',
       },
     },
   },
@@ -158,6 +160,8 @@ export default [
         crypto: 'readonly',
         URL: 'readonly',
         URLSearchParams: 'readonly',
+        TextEncoder: 'readonly',
+        btoa: 'readonly',
       },
     },
     plugins: {
